@@ -1,0 +1,200 @@
+import React from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+
+// Get device width to make cards responsive
+const { width } = Dimensions.get('window');
+
+const PlaceCard = ({ 
+  item, 
+  variant = 'horizontal',
+  onPress, 
+  onFavoritePress,
+  isFavorite = false,
+  imageStyle = {},
+  style = {}
+}) => {
+  const getCardStyle = () => {
+    switch (variant) {
+      case 'popular':
+        return {
+          containerStyle: styles.popularContainer,
+          imageStyle: styles.popularImage,
+          infoStyle: styles.popularInfo,
+        };
+      case 'vertical':
+        return {
+          containerStyle: styles.verticalContainer,
+          imageStyle: styles.verticalImage,
+          infoStyle: styles.verticalInfo,
+        };
+      case 'horizontal':
+      default:
+        return {
+          containerStyle: styles.horizontalContainer,
+          imageStyle: styles.horizontalImage,
+          infoStyle: styles.horizontalInfo,
+        };
+    }
+  };
+
+  const { containerStyle, imageStyle: variantImageStyle, infoStyle } = getCardStyle();
+
+  return (
+    <TouchableOpacity
+      style={[containerStyle, style]}
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: item.imageUrl || item.images?.[0]?.imageUrl }}
+          style={[variantImageStyle, imageStyle]}
+          resizeMode="cover"
+        />
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={() => onFavoritePress && onFavoritePress(item.id)}
+        >
+          <Ionicons
+            name={isFavorite ? 'heart' : 'heart-outline'}
+            size={22}
+            color={isFavorite ? '#FF5A5F' : 'white'}
+          />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={infoStyle}>
+        <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.location} numberOfLines={1}>
+          {item.location || item.address}
+        </Text>
+        
+        <View style={styles.priceRatingContainer}>
+          <Text style={styles.price}>
+            <Text style={styles.priceValue}>${item.price || 0}</Text>/night
+          </Text>
+          
+          {item.rating && (
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={14} color="#FFD700" />
+              <Text style={styles.rating}>{item.rating.toFixed(1)}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  // Popular card styles (large card)
+  popularContainer: {
+    width: width * 0.65,
+    height: 220,
+    marginRight: SIZES.padding.medium,
+    borderRadius: SIZES.borderRadius.medium,
+    overflow: 'hidden',
+    backgroundColor: 'white',
+    ...SHADOWS.medium,
+  },
+  popularImage: {
+    width: '100%',
+    height: 150,
+  },
+  popularInfo: {
+    padding: SIZES.padding.small,
+  },
+  
+  // Horizontal card styles (with image on left)
+  horizontalContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    height: 100,
+    marginBottom: SIZES.padding.medium,
+    borderRadius: SIZES.borderRadius.medium,
+    overflow: 'hidden',
+    backgroundColor: 'white',
+    ...SHADOWS.small,
+  },
+  horizontalImage: {
+    width: 100,
+    height: '100%',
+  },
+  horizontalInfo: {
+    flex: 1,
+    padding: SIZES.padding.small,
+  },
+  
+  // Vertical card styles (compact)
+  verticalContainer: {
+    width: width * 0.4,
+    height: 180,
+    marginRight: SIZES.padding.medium,
+    borderRadius: SIZES.borderRadius.medium,
+    overflow: 'hidden',
+    backgroundColor: 'white',
+    ...SHADOWS.small,
+  },
+  verticalImage: {
+    width: '100%',
+    height: 100,
+  },
+  verticalInfo: {
+    padding: SIZES.padding.small,
+  },
+  
+  // Common styles
+  imageContainer: {
+    position: 'relative',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+    marginBottom: 2,
+  },
+  location: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+    marginBottom: 4,
+  },
+  priceRatingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  price: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+  },
+  priceValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rating: {
+    marginLeft: 2,
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+  },
+});
+
+export default PlaceCard;
