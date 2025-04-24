@@ -1,7 +1,9 @@
+// Updated PlaceCard.js
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { formatPrice } from '../../utils/formatPrice';
 
 // Get device width to make cards responsive
 const { width } = Dimensions.get('window');
@@ -73,7 +75,7 @@ const PlaceCard = ({
         
         <View style={styles.priceRatingContainer}>
           <Text style={styles.price}>
-            <Text style={styles.priceValue}>${item.price || 0}</Text>/night
+            <Text style={styles.priceValue}>{formatPrice(item.price) || 0} VNĐ</Text>/ ngày
           </Text>
           
           {item.rating && (
@@ -91,8 +93,8 @@ const PlaceCard = ({
 const styles = StyleSheet.create({
   // Popular card styles (large card)
   popularContainer: {
-    width: width * 0.65,
-    height: 220,
+    width: width * 0.6, // Make width shorter (was 0.65)
+    height: 250, // Make length longer (was 220)
     marginRight: SIZES.padding.medium,
     borderRadius: SIZES.borderRadius.medium,
     overflow: 'hidden',
@@ -101,10 +103,12 @@ const styles = StyleSheet.create({
   },
   popularImage: {
     width: '100%',
-    height: 150,
+    height: 170, // Increased from 150
   },
   popularInfo: {
     padding: SIZES.padding.small,
+    height: 80, // Fixed height for info section
+    justifyContent: 'space-between', // Distribute content evenly
   },
   
   // Horizontal card styles (with image on left)
@@ -125,6 +129,7 @@ const styles = StyleSheet.create({
   horizontalInfo: {
     flex: 1,
     padding: SIZES.padding.small,
+    justifyContent: 'space-between',
   },
   
   // Vertical card styles (compact)
@@ -143,6 +148,8 @@ const styles = StyleSheet.create({
   },
   verticalInfo: {
     padding: SIZES.padding.small,
+    height: 80,
+    justifyContent: 'space-between',
   },
   
   // Common styles
@@ -175,6 +182,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 4, // Added margin to move away from the location text
   },
   price: {
     fontSize: 12,

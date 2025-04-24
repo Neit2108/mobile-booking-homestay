@@ -1,3 +1,4 @@
+// Updated PopularSection.js
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
@@ -15,9 +16,9 @@ const PopularSection = ({ data = [], loading = false, onSeeAll, onPlacePress }) 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Most Popular</Text>
+        <Text style={styles.title}>Lựa chọn hàng đầu</Text>
         <TouchableOpacity onPress={onSeeAll}>
-          <Text style={styles.seeAll}>See All</Text>
+          <Text style={styles.seeAll}>Tất cả</Text>
         </TouchableOpacity>
       </View>
 
@@ -37,7 +38,7 @@ const PopularSection = ({ data = [], loading = false, onSeeAll, onPlacePress }) 
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No popular places found</Text>
+            <Text style={styles.emptyText}>Không tìm thấy địa điểm</Text>
           </View>
         }
       />

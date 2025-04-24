@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, 
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 import PlaceCard from '../cards/PlaceCard';
+import { formatPrice } from '../../utils/formatPrice';
 
 const BestTodaySection = ({ data = [], loading = false, onSeeAll }) => {
   if (loading) {
@@ -17,11 +18,11 @@ const BestTodaySection = ({ data = [], loading = false, onSeeAll }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Best Today </Text>
+          <Text style={styles.title}>Lựa chọn hôm nay</Text>
           <Ionicons name="flame" size={18} color="#FF6B00" style={styles.fireIcon} />
         </View>
         <TouchableOpacity onPress={onSeeAll}>
-          <Text style={styles.seeAll}>See All</Text>
+          <Text style={styles.seeAll}>Tất cả</Text>
         </TouchableOpacity>
       </View>
 
@@ -64,9 +65,9 @@ const BestTodaySection = ({ data = [], loading = false, onSeeAll }) => {
                 
                 <View style={styles.priceContainer}>
                   {hasDiscount && (
-                    <Text style={styles.originalPrice}>${item.originalPrice}</Text>
+                    <Text style={styles.originalPrice}>{formatPrice(item.originalPrice)} VNĐ</Text>
                   )}
-                  <Text style={styles.price}>${item.price}</Text>
+                  <Text style={styles.price}>{formatPrice(item.price)} VNĐ</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -74,7 +75,7 @@ const BestTodaySection = ({ data = [], loading = false, onSeeAll }) => {
         }}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No special deals today</Text>
+            <Text style={styles.emptyText}>Không có gì đặc biệt</Text>
           </View>
         }
       />

@@ -6,15 +6,15 @@ import { COLORS, SIZES } from '../../constants/theme';
 const CategoryIcon = ({ category }) => {
   let iconName;
   
-  switch (category.toLowerCase()) {
-    case 'villas':
+  switch (category) {
+    case 'Homestay':
       iconName = 'home';
       break;
-    case 'hotels':
+    case 'Địa điểm':
       iconName = 'business';
       break;
-    case 'apartments':
-      iconName = 'apartment';
+    case 'Đi lại':
+      iconName = 'train';
       break;
     default:
       iconName = 'grid';

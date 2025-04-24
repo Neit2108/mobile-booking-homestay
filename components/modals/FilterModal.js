@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
+import { formatPrice } from '../../utils/formatPrice';
 
 const FilterModal = ({ visible, onClose, onApply, initialFilters }) => {
   const [filters, setFilters] = useState({
@@ -83,8 +84,8 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters }) => {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Price Range</Text>
                   <View style={styles.priceLabels}>
-                    <Text style={styles.priceLabel}>${filters.priceMin}</Text>
-                    <Text style={styles.priceLabel}>${filters.priceMax}</Text>
+                    <Text style={styles.priceLabel}>{formatPrice(filters.priceMin)} VNĐ</Text>
+                    <Text style={styles.priceLabel}>{formatPrice(filters.priceMax)} VNĐ</Text>
                   </View>
                   <View style={styles.sliderContainer}>
                     <Slider

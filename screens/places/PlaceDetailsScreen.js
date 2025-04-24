@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,18 +9,25 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  Dimensions,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 // API
-import { getPlaceById } from '../../api/places';
+import { getPlaceById, getPlaceReviews } from '../../api/places';
 
 // Theme
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
 // Components
 import CustomButton from '../../components/buttons/CustomButton';
+import RatingSection from '../../components/ratings/RatingSection';
+import ReviewsSection from '../../components/ratings/ReviewsSection';
+import { formatPrice } from '../../utils/formatPrice';
+
+const { width } = Dimensions.get('window');
 
 const PlaceDetailsScreen = () => {
   const navigation = useNavigation();
@@ -31,9 +38,14 @@ const PlaceDetailsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [favorite, setFavorite] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [reviews, setReviews] = useState([]);
+  
+  const flatListRef = useRef(null);
   
   useEffect(() => {
     fetchPlaceDetails();
+    fetchReviews();
   }, [id]);
   
   const fetchPlaceDetails = async () => {
@@ -51,6 +63,16 @@ const PlaceDetailsScreen = () => {
     }
   };
   
+  const fetchReviews = async () => {
+    try {
+      const reviewsData = await getPlaceReviews(id);
+      setReviews(reviewsData);
+    } catch (err) {
+      console.error('Error fetching reviews:', err);
+      // Don't set error state here to keep the UI usable even if reviews fail to load
+    }
+  };
+  
   const handleBackPress = () => {
     navigation.goBack();
   };
@@ -62,6 +84,29 @@ const PlaceDetailsScreen = () => {
   const handleBookNow = () => {
     // Navigate to booking screen
     navigation.navigate('Booking', { placeId: id });
+  };
+  
+  const handleReviewAdded = () => {
+    // Refresh place details and reviews
+    fetchPlaceDetails();
+    fetchReviews();
+  };
+
+  const renderImageItem = ({ item, index }) => (
+    <Image
+      source={{ uri: item.imageUrl }}
+      style={styles.carouselImage}
+      resizeMode="cover"
+    />
+  );
+  
+  const onImageScrollEnd = (e) => {
+    const contentOffset = e.nativeEvent.contentOffset;
+    const viewSize = e.nativeEvent.layoutMeasurement;
+    
+    // Calculate current index
+    const newIndex = Math.floor(contentOffset.x / viewSize.width);
+    setCurrentImageIndex(newIndex);
   };
   
   if (loading) {
@@ -82,19 +127,50 @@ const PlaceDetailsScreen = () => {
       </SafeAreaView>
     );
   }
+
+  // Ensure place.images is an array, or create a default array with one image
+  const images = Array.isArray(place.images) && place.images.length > 0 
+    ? place.images 
+    : [{ id: 'default', imageUrl: place.images?.[0]?.imageUrl || 'https://via.placeholder.com/400x300' }];
+    
+  // If there are no images, add a placeholder
+  if (images.length === 0) {
+    images.push({ id: 'default', imageUrl: 'https://via.placeholder.com/400x300' });
+  }
   
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" />
       
-      {/* Header with image */}
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: place.images?.[0]?.imageUrl }}
-          style={styles.image}
-          resizeMode="cover"
+      {/* Image Carousel */}
+      <View style={styles.imageCarouselContainer}>
+        <FlatList
+          ref={flatListRef}
+          data={images}
+          keyExtractor={(item, index) => `image-${item.id || index}`}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={onImageScrollEnd}
+          renderItem={renderImageItem}
         />
         
+        {/* Image indicators */}
+        {images.length > 1 && (
+          <View style={styles.paginationContainer}>
+            {images.map((_, index) => (
+              <View 
+                key={`dot-${index}`} 
+                style={[
+                  styles.paginationDot,
+                  index === currentImageIndex && styles.paginationDotActive
+                ]} 
+              />
+            ))}
+          </View>
+        )}
+        
+        {/* Header buttons */}
         <View style={styles.headerButtons}>
           <TouchableOpacity style={styles.headerButton} onPress={handleBackPress}>
             <Ionicons name="arrow-back" size={24} color="white" />
@@ -130,32 +206,32 @@ const PlaceDetailsScreen = () => {
           {/* Price */}
           <View style={styles.priceContainer}>
             <Text style={styles.price}>
-              <Text style={styles.priceValue}>${place.price || 0}</Text>
-              <Text style={styles.priceNight}> / night</Text>
+              <Text style={styles.priceValue}>{formatPrice(place.price) || 0} VNĐ</Text>
+              <Text style={styles.priceNight}> / ngày</Text>
             </Text>
           </View>
           
           {/* Description */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.sectionTitle}>Mô tả</Text>
             <Text style={styles.description}>{place.description || 'No description available.'}</Text>
           </View>
           
           {/* Details */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Details</Text>
+            <Text style={styles.sectionTitle}>Chi tiết</Text>
             <View style={styles.detailsGrid}>
               <View style={styles.detailItem}>
                 <Ionicons name="people-outline" size={24} color={COLORS.primary} />
-                <Text style={styles.detailText}>Max {place.maxGuests || 2} guests</Text>
+                <Text style={styles.detailText}>Tối đa {place.maxGuests || 2} khách</Text>
               </View>
               <View style={styles.detailItem}>
                 <Ionicons name="bed-outline" size={24} color={COLORS.primary} />
-                <Text style={styles.detailText}>{Math.ceil((place.maxGuests || 2) / 2)} bedrooms</Text>
+                <Text style={styles.detailText}>{Math.ceil((place.maxGuests || 2) / 2)} phòng ngủ</Text>
               </View>
               <View style={styles.detailItem}>
                 <Ionicons name="water-outline" size={24} color={COLORS.primary} />
-                <Text style={styles.detailText}>{Math.ceil((place.maxGuests || 2) / 2)} bathrooms</Text>
+                <Text style={styles.detailText}>{Math.ceil((place.maxGuests || 2) / 2)} phòng tắm</Text>
               </View>
               <View style={styles.detailItem}>
                 <Ionicons name="wifi-outline" size={24} color={COLORS.primary} />
@@ -164,14 +240,30 @@ const PlaceDetailsScreen = () => {
             </View>
           </View>
           
+          {/* Ratings & Reviews */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Đánh giá</Text>
+            <RatingSection 
+              rating={place.rating || 0} 
+              numOfRating={place.numOfRating || 0} 
+              placeId={place.id}
+              onReviewAdded={handleReviewAdded}
+            />
+            <ReviewsSection 
+              placeId={place.id}
+              reviews={reviews}
+            />
+          </View>
+          
           {/* Placeholder for more sections like amenities, reviews, etc. */}
+          <View style={styles.bottomSpace} />
         </View>
       </ScrollView>
       
       {/* Book Now Button */}
       <View style={styles.footer}>
         <CustomButton
-          title="Book Now"
+          title="Đặt ngay"
           onPress={handleBookNow}
           style={styles.bookButton}
         />
@@ -214,18 +306,40 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  imageContainer: {
+  imageCarouselContainer: {
     height: 300,
     width: '100%',
     position: 'relative',
+    backgroundColor: COLORS.background.secondary, // Add background color in case images take time to load
   },
-  image: {
+  carouselImage: {
+    width: width,
+    height: 300,
+  },
+  paginationContainer: {
+    position: 'absolute',
+    bottom: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
-    height: '100%',
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  paginationDotActive: {
+    backgroundColor: 'white',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   headerButtons: {
     position: 'absolute',
-    top: 0,
+    top: 15,
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -321,6 +435,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.text.primary,
     marginLeft: SIZES.padding.small,
+  },
+  bottomSpace: {
+    height: 30,
   },
   footer: {
     padding: SIZES.padding.medium,

@@ -35,9 +35,9 @@ const HomeScreen = () => {
   const [recommendedPlaces, setRecommendedPlaces] = useState([]);
   const [bestTodayPlaces, setBestTodayPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
 
-  const categories = ['All', 'Villas', 'Hotels', 'Apartments'];
+  const categories = ['Tất cả', 'Homestay', 'Địa điểm', 'Đi lại'];
 
   useEffect(() => {
     const fetchPlaces = async () => {
@@ -62,7 +62,7 @@ const HomeScreen = () => {
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
-    // In a real app, you'd filter the places based on the selected category
+    
   };
 
   const handleSeeAllPopular = () => {
@@ -104,7 +104,7 @@ const HomeScreen = () => {
           onPlacePress={handlePlacePress}
         />
         
-        <Text style={styles.sectionTitle}>Recommended for you</Text>
+        <Text style={styles.sectionTitle}>Gợi ý cho bạn</Text>
         
         <CategoryTabs
           categories={categories}
