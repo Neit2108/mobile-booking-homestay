@@ -6,6 +6,24 @@ import { COLORS, SIZES, FONTS } from '../../constants/theme';
 const DEFAULT_AVATAR = require('../../assets/images/default-avatar.jpg');
 
 const Header = ({ name, location, avatar, onSearchPress, onNotificationPress }) => {
+  const handleSearchPress = () => {
+    console.log('Search button pressed in Header component');
+    if (onSearchPress) {
+      onSearchPress();
+    } else {
+      console.warn('onSearchPress prop is not defined');
+    }
+  };
+
+  const handleNotificationPress = () => {
+    console.log('Notification button pressed in Header component');
+    if (onNotificationPress) {
+      onNotificationPress();
+    } else {
+      console.warn('onNotificationPress prop is not defined');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* User Info */}
@@ -27,14 +45,14 @@ const Header = ({ name, location, avatar, onSearchPress, onNotificationPress }) 
       <View style={styles.actions}>
         <TouchableOpacity 
           style={styles.iconButton} 
-          onPress={onSearchPress}
+          onPress={handleSearchPress}
         >
           <Ionicons name="search" size={22} color={COLORS.text.primary} />
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.iconButton} 
-          onPress={onNotificationPress}
+          onPress={handleNotificationPress}
         >
           <Ionicons name="notifications-outline" size={22} color={COLORS.text.primary} />
         </TouchableOpacity>

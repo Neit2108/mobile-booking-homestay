@@ -29,6 +29,8 @@ import { COLORS, SIZES } from '../constants/theme';
 import { useAuth } from '../context/AuthContext';
 
 const HomeScreen = () => {
+  console.log('Rendering HomeScreen'); // Debug log
+  
   const navigation = useNavigation();
   const { user } = useAuth();
   const [popularPlaces, setPopularPlaces] = useState([]);
@@ -62,7 +64,6 @@ const HomeScreen = () => {
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
-    
   };
 
   const handleSeeAllPopular = () => {
@@ -81,6 +82,22 @@ const HomeScreen = () => {
     navigation.navigate('PlaceDetails', { id: place.id });
   };
 
+  // Navigate to search screen
+  const navigateToSearch = () => {
+    console.log('Navigating to Search screen from HomeScreen');
+    
+    // List available routes for debugging
+    const routes = navigation.getState()?.routes;
+    console.log('Available routes:', routes.map(route => route.name));
+    
+    navigation.navigate('Search');
+  };
+
+  // Navigate to notifications
+  const navigateToNotifications = () => {
+    console.log('Navigate to notifications (not implemented)');
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background.primary} />
@@ -89,6 +106,8 @@ const HomeScreen = () => {
         name={user?.fullName || 'Guest'}
         location={user?.location || 'San Diego, CA'}
         avatar={user?.avatarUrl}
+        onSearchPress={navigateToSearch}
+        onNotificationPress={navigateToNotifications}
       />
       
       <ScrollView 

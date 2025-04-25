@@ -20,8 +20,13 @@ export const AuthProvider = ({ children }) => {
         const storedUser = await AsyncStorage.getItem('user');
         
         if (storedToken && storedUser) {
+          console.log('Found stored auth token and user data');
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
+          // Set auth header for API calls
+          authAPI.setAuthToken(storedToken);
+        } else {
+          console.log('No stored auth token found, user needs to login');
         }
       } catch (e) {
         console.error('Failed to load auth data from storage', e);
@@ -44,6 +49,9 @@ export const AuthProvider = ({ children }) => {
       
       await AsyncStorage.setItem('authToken', token);
       await AsyncStorage.setItem('user', JSON.stringify(userData));
+      
+      // Set auth header for future API calls
+      authAPI.setAuthToken(token);
       
       setToken(token);
       setUser(userData);
@@ -75,6 +83,10 @@ export const AuthProvider = ({ children }) => {
     try {
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('user');
+      
+      // Clear auth header
+      authAPI.setAuthToken(null);
+      
       setToken(null);
       setUser(null);
     } catch (e) {

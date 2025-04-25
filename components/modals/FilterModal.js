@@ -6,9 +6,10 @@ import {
   Modal,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Slider,
   ScrollView,
 } from 'react-native';
+
+import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
 import { formatPrice } from '../../utils/formatPrice';
