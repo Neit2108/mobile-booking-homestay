@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,20 @@ import {
   Image,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
+// Components
+import FilterSearchModal from "../../components/modals/FilterSearchModal";
+
+// API
+import { searchPlaces, getAllPlaces } from "../../api/places";
+
 // Constants and Utils
 import { COLORS, SIZES, SHADOWS } from "../../constants/theme";
 import { formatPrice } from "../../utils/formatPrice";
-import FilterSearchModal from "../../components/modals/FilterSearchModal";
 
 const RecentSearchItem = ({ item, onPress }) => (
   <TouchableOpacity style={styles.recentSearchItem} onPress={onPress}>
@@ -32,7 +38,10 @@ const RecentSearchItem = ({ item, onPress }) => (
 
 const RecentlyViewedItem = ({ item, onPress }) => (
   <TouchableOpacity style={styles.recentlyViewedItem} onPress={onPress}>
-    <Image source={{ uri: item.imageUrl }} style={styles.recentlyViewedImage} />
+    <Image 
+      source={{ uri: item.imageUrl || item.images?.[0]?.imageUrl || "https://source.unsplash.com/random/300x200/?hotel" }} 
+      style={styles.recentlyViewedImage} 
+    />
     <View style={styles.recentlyViewedContent}>
       <View style={styles.recentlyViewedHeader}>
         <Text style={styles.recentlyViewedName} numberOfLines={1}>
@@ -40,60 +49,56 @@ const RecentlyViewedItem = ({ item, onPress }) => (
         </Text>
         <View style={styles.ratingContainer}>
           <Ionicons name="star" size={16} color="#FFD700" />
-          <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
+          <Text style={styles.ratingText}>{item.rating?.toFixed(1) || "0.0"}</Text>
         </View>
       </View>
-      <Text style={styles.recentlyViewedLocation}>{item.location}</Text>
+      <Text style={styles.recentlyViewedLocation}>{item.location || item.address}</Text>
       <Text style={styles.recentlyViewedPrice}>
-        <Text style={styles.priceValue}>${formatPrice(item.price)}</Text>/night
+        <Text style={styles.priceValue}>{formatPrice(item.price)}</Text> VND/night
       </Text>
     </View>
   </TouchableOpacity>
 );
 
 const SearchScreen = () => {
-  console.log("Rendering SearchScreen"); // Debug log
-
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [recentSearches, setRecentSearches] = useState([
-    { id: "1", name: "Golden Sands Retreat", location: "Clearwater, FL" },
-    { id: "2", name: "Crystal Peak Lodge", location: "Aspen, CO" },
-    { id: "3", name: "Coral Bay Resort", location: "Miami Beach, FL" },
-  ]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [filtersApplied, setFiltersApplied] = useState({});
 
-  const [recentlyViewed, setRecentlyViewed] = useState([
-    {
-      id: "1",
-      name: "Mystic Palms",
-      location: "Palm Springs, CA",
-      price: 230,
-      rating: 4.0,
-      imageUrl: "https://source.unsplash.com/random/300x200/?hotel,1",
-    },
-    {
-      id: "2",
-      name: "Sapphire Cove Hotel",
-      location: "Key West, FL",
-      price: 290,
-      rating: 3.8,
-      imageUrl: "https://source.unsplash.com/random/300x200/?hotel,2",
-    },
-    {
-      id: "3",
-      name: "Elysian Suites",
-      location: "San Francisco, CA",
-      price: 320,
-      rating: 3.8,
-      imageUrl: "https://source.unsplash.com/random/300x200/?hotel,3",
-    },
-  ]);
+  // Load recent items on mount
+  useEffect(() => {
+    loadRecentItems();
+  }, []);
+
+  const loadRecentItems = async () => {
+    // In a real app, you would fetch this from AsyncStorage or a similar persistence mechanism
+    // For now, we'll load some sample data
+    try {
+      setLoading(true);
+      const topPlaces = await getAllPlaces({ limit: 5 });
+      setRecentlyViewed(topPlaces.slice(0, 3));
+      
+      // Load recent searches from AsyncStorage in a real app
+      const savedRecentSearches = [
+        { id: "1", name: "Golden Sands Retreat", location: "Clearwater, FL" },
+        { id: "2", name: "Crystal Peak Lodge", location: "Aspen, CO" },
+        { id: "3", name: "Coral Bay Resort", location: "Miami Beach, FL" },
+      ];
+      setRecentSearches(savedRecentSearches);
+    } catch (error) {
+      console.error("Error loading recent items:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = () => {
-    console.log("Search with query:", searchQuery); // Debug log
     if (searchQuery.trim()) {
-      // Save search query to recent searches
+      // Save search to recent searches
       const newSearch = {
         id: Date.now().toString(),
         name: searchQuery,
@@ -107,50 +112,57 @@ const SearchScreen = () => {
 
       if (existingIndex === -1) {
         setRecentSearches((prev) => [newSearch, ...prev.slice(0, 4)]);
+        
+        // In a real app, save this to AsyncStorage
+        // AsyncStorage.setItem('recentSearches', JSON.stringify([newSearch, ...recentSearches.slice(0, 4)]))
       }
 
       // Navigate to results with search query
-      navigation.navigate("SearchResults", { query: searchQuery });
+      navigation.navigate("SearchResults", { 
+        query: searchQuery,
+        filters: filtersApplied
+      });
     }
   };
 
   const handleClearAll = () => {
     setRecentSearches([]);
-  };
-
-  const navigateToResults = () => {
-    console.log("Navigating to results"); // Debug log
-    navigation.navigate("SearchResults");
+    // In a real app, clear from AsyncStorage too
+    // AsyncStorage.removeItem('recentSearches')
   };
 
   const handleRecentItemPress = (item) => {
-    console.log("Recent item pressed:", item.name); // Debug log
     setSearchQuery(item.name);
     navigation.navigate("SearchResults", {
       query: item.name,
       location: item.location,
+      filters: filtersApplied
     });
   };
 
   const handleViewedItemPress = (item) => {
-    console.log("Viewed item pressed:", item.name); // Debug log
     navigation.navigate("PlaceDetails", { id: item.id });
   };
 
   const handleSeeAll = () => {
-    console.log("See all pressed"); // Debug log
     navigation.navigate("RecentlyViewed");
   };
 
   const handleBackPress = () => {
-    console.log("Back button pressed"); // Debug log
     navigation.goBack();
   };
 
   const handleApplyFilters = (filters) => {
-    console.log("Filters applied:", filters);
+    setFiltersApplied(filters);
     setFilterModalVisible(false);
-    // Apply filters to search results if needed
+    
+    // If there's a search query, navigate to results with both query and filters
+    if (searchQuery.trim()) {
+      navigation.navigate("SearchResults", { 
+        query: searchQuery,
+        filters: filters
+      });
+    }
   };
 
   return (
@@ -201,60 +213,68 @@ const SearchScreen = () => {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
-        {/* Recent Searches */}
-        {recentSearches.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recent Searches</Text>
-              <TouchableOpacity onPress={handleClearAll}>
-                <Text style={styles.clearAllText}>Clear All</Text>
-              </TouchableOpacity>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : (
+        <View style={styles.content}>
+          {/* Recent Searches */}
+          {recentSearches.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Searches</Text>
+                <TouchableOpacity onPress={handleClearAll}>
+                  <Text style={styles.clearAllText}>Clear All</Text>
+                </TouchableOpacity>
+              </View>
+
+              <FlatList
+                data={recentSearches}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <RecentSearchItem
+                    item={item}
+                    onPress={() => handleRecentItemPress(item)}
+                  />
+                )}
+                scrollEnabled={false}
+              />
             </View>
+          )}
 
-            <FlatList
-              data={recentSearches}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <RecentSearchItem
-                  item={item}
-                  onPress={() => handleRecentItemPress(item)}
-                />
-              )}
-              scrollEnabled={false}
-            />
-          </View>
-        )}
+          {/* Recently Viewed */}
+          {recentlyViewed.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recently Viewed</Text>
+                <TouchableOpacity onPress={handleSeeAll}>
+                  <Text style={styles.seeAllText}>See All</Text>
+                </TouchableOpacity>
+              </View>
 
-        {/* Recently Viewed */}
-        {recentlyViewed.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recently Viewed</Text>
-              <TouchableOpacity onPress={handleSeeAll}>
-                <Text style={styles.seeAllText}>See All</Text>
-              </TouchableOpacity>
+              <FlatList
+                data={recentlyViewed}
+                keyExtractor={(item) => item.id?.toString()}
+                renderItem={({ item }) => (
+                  <RecentlyViewedItem
+                    item={item}
+                    onPress={() => handleViewedItemPress(item)}
+                  />
+                )}
+                scrollEnabled={false}
+              />
             </View>
-
-            <FlatList
-              data={recentlyViewed}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <RecentlyViewedItem
-                  item={item}
-                  onPress={() => handleViewedItemPress(item)}
-                />
-              )}
-              scrollEnabled={false}
-            />
-          </View>
-        )}
-      </View>
+          )}
+        </View>
+      )}
+      
+      {/* Filter Modal */}
       <FilterSearchModal
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
         onApply={handleApplyFilters}
-        initialFilters={{}}
+        initialFilters={filtersApplied}
       />
     </SafeAreaView>
   );
@@ -309,6 +329,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: SIZES.padding.large,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   section: {
     marginBottom: SIZES.padding.large,
@@ -371,6 +396,7 @@ const styles = StyleSheet.create({
   recentlyViewedImage: {
     width: 100,
     height: 100,
+    backgroundColor: COLORS.background.secondary, // Placeholder color while loading
   },
   recentlyViewedContent: {
     flex: 1,

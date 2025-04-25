@@ -1,68 +1,256 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  FlatList,
   TouchableOpacity,
+  TextInput,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Constants
-import { COLORS, SIZES } from '../../constants/theme';
+// Components
+import PlaceCard from '../../components/cards/PlaceCard';
+import FilterModal from '../../components/modals/FilterModal';
+
+// API
+import { searchPlaces, getAllPlaces } from '../../api/places';
+
+// Custom hooks
+import { useHomestayFiltering } from '../../hooks/useHomestayFiltering';
+
+// Theme
+import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
 const SearchResultsScreen = () => {
-  console.log('Rendering SearchResultsScreen'); // Debug log
-  
   const navigation = useNavigation();
   const route = useRoute();
-  const { query, location } = route.params || {};
+  const { query = '', location = '', filters: routeFilters = {} } = route.params || {};
   
-  console.log('Route params:', { query, location }); // Debug log
+  const [localSearchQuery, setLocalSearchQuery] = useState(query);
+  const [isLoading, setIsLoading] = useState(true);
+  const [allPlaces, setAllPlaces] = useState([]);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   
-  // Handle back button press
+  // Initialize filtering hook with all places
+  const {
+    filteredPlaces,
+    setSearchTerm,
+    setPriceRange,
+    setRatingFilter,
+    setSortOption,
+    resetFilters,
+    currentPage,
+    setCurrentPage,
+    getPaginatedResults
+  } = useHomestayFiltering(allPlaces);
+
+  // Fetch places on initial load
+  useEffect(() => {
+    fetchPlaces();
+  }, []);
+
+  // Apply route filters whenever they change
+  useEffect(() => {
+    if (query) {
+      setSearchTerm(query);
+    }
+    
+    if (routeFilters) {
+      if (routeFilters.priceMin !== undefined || routeFilters.priceMax !== undefined) {
+        setPriceRange({
+          min: routeFilters.priceMin || 0,
+          max: routeFilters.priceMax || 1000
+        });
+      }
+      
+      if (routeFilters.rating) {
+        setRatingFilter(routeFilters.rating.toString());
+      }
+      
+      if (routeFilters.sortBy) {
+        setSortOption(routeFilters.sortBy);
+      }
+    }
+  }, [query, routeFilters]);
+
+  const fetchPlaces = async () => {
+    try {
+      setIsLoading(true);
+      
+      // If search query exists, use search API with any applied filters
+      let data;
+      if (query.trim()) {
+        data = await searchPlaces(query, routeFilters);
+      } else {
+        // Otherwise get all places
+        data = await getAllPlaces();
+      }
+      
+      setAllPlaces(data);
+    } catch (error) {
+      console.error('Error fetching places:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    if (localSearchQuery.trim() !== query) {
+      // Update UI immediately
+      setSearchTerm(localSearchQuery);
+      
+      // Navigate with new query to refresh route params
+      navigation.setParams({ 
+        query: localSearchQuery,
+        location
+      });
+      
+      // Re-fetch from API with new search term
+      fetchPlaces();
+    }
+  };
+
   const handleBackPress = () => {
-    console.log('Back button pressed in SearchResultsScreen'); // Debug log
     navigation.goBack();
   };
 
-  // Navigate to search screen
-  const navigateToSearch = () => {
-    console.log('Navigating to Search from SearchResultsScreen'); // Debug log
-    navigation.navigate('Search');
+  const handlePlacePress = (place) => {
+    navigation.navigate('PlaceDetails', { id: place.id });
   };
+
+  const handleApplyFilters = (newFilters) => {
+    // Apply filters
+    if (newFilters.priceMin !== undefined || newFilters.priceMax !== undefined) {
+      setPriceRange({
+        min: newFilters.priceMin,
+        max: newFilters.priceMax
+      });
+    }
+    
+    if (newFilters.rating) {
+      setRatingFilter(newFilters.rating.toString());
+    }
+    
+    if (newFilters.sortBy) {
+      setSortOption(newFilters.sortBy);
+    }
+    
+    setFilterModalVisible(false);
+  };
+
+  // Get paginated results
+  const { items: paginatedPlaces, totalPages } = getPaginatedResults(10);
   
+  const handleLoadMore = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Render Empty Component for FlatList
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="search-outline" size={50} color={COLORS.text.secondary} />
+      <Text style={styles.emptyText}>No results found</Text>
+      <Text style={styles.emptySubText}>Try adjusting your search or filters</Text>
+      <TouchableOpacity style={styles.resetButton} onPress={() => {
+        resetFilters();
+        setLocalSearchQuery('');
+        navigation.setParams({ query: '', location: '', filters: {} });
+      }}>
+        <Text style={styles.resetButtonText}>Reset All Filters</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background.primary} />
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Search Results</Text>
-        <View style={styles.placeholder} />
+        <View style={styles.placeholderRight} />
       </View>
       
-      {/* Content */}
-      <View style={styles.content}>
-        <Text style={styles.searchInfo}>
-          {query ? `Search results for: "${query}"` : 'All places'}
-          {location ? ` in ${location}` : ''}
-        </Text>
+      {/* Search Input */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <Ionicons name="search" size={20} color={COLORS.text.secondary} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search places"
+            value={localSearchQuery}
+            onChangeText={setLocalSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+            placeholderTextColor={COLORS.text.placeholder}
+          />
+        </View>
         
-        {/* Simple button to navigate back to search */}
         <TouchableOpacity 
-          style={styles.searchButton}
-          onPress={navigateToSearch}
+          style={styles.filterButton}
+          onPress={() => setFilterModalVisible(true)}
         >
-          <Ionicons name="search" size={20} color="white" />
-          <Text style={styles.searchButtonText}>New Search</Text>
+          <Ionicons name="options-outline" size={20} color={COLORS.text.primary} />
         </TouchableOpacity>
       </View>
+      
+      {/* Search Info */}
+      <View style={styles.searchInfoContainer}>
+        <Text style={styles.searchInfo}>
+          {query ? `Results for "${query}"` : 'All Places'}
+          {location ? ` in ${location}` : ''}
+        </Text>
+        <Text style={styles.resultCount}>
+          {filteredPlaces.length} results found
+        </Text>
+      </View>
+      
+      {/* Results */}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={paginatedPlaces}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <PlaceCard
+              item={item}
+              variant="horizontal"
+              onPress={() => handlePlacePress(item)}
+              style={styles.placeCard}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={renderEmptyComponent}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+      
+      {/* Filter Modal */}
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApply={handleApplyFilters}
+        initialFilters={{
+          priceMin: routeFilters.priceMin,
+          priceMax: routeFilters.priceMax,
+          rating: routeFilters.rating
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -87,33 +275,95 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text.primary,
   },
-  placeholder: {
-    width: 30,
+  placeholderRight: {
+    width: 40,
   },
-  content: {
-    flex: 1,
-    padding: SIZES.padding.large,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchInfo: {
-    fontSize: 18,
-    marginBottom: SIZES.padding.large,
-    textAlign: 'center',
-  },
-  searchButton: {
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingVertical: SIZES.padding.medium,
     paddingHorizontal: SIZES.padding.large,
-    borderRadius: SIZES.borderRadius.medium,
+    marginBottom: SIZES.padding.medium,
   },
-  searchButtonText: {
-    color: 'white',
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    backgroundColor: COLORS.background.secondary,
+    borderRadius: SIZES.borderRadius.medium,
+    paddingHorizontal: SIZES.padding.medium,
+    marginRight: SIZES.padding.medium,
+  },
+  searchIcon: {
+    marginRight: SIZES.padding.small,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.text.primary,
+  },
+  filterButton: {
+    width: 44,
+    height: 44,
+    borderRadius: SIZES.borderRadius.medium,
+    backgroundColor: COLORS.background.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchInfoContainer: {
+    paddingHorizontal: SIZES.padding.large,
+    paddingBottom: SIZES.padding.medium,
+  },
+  searchInfo: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: SIZES.padding.small,
+    color: COLORS.text.primary,
+  },
+  resultCount: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    marginTop: 4,
+  },
+  listContent: {
+    paddingHorizontal: SIZES.padding.large,
+    paddingBottom: SIZES.padding.large * 2,
+  },
+  placeCard: {
+    marginBottom: SIZES.padding.medium,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    marginTop: SIZES.padding.large * 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SIZES.padding.large,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+    marginTop: SIZES.padding.medium,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    marginTop: SIZES.padding.small,
+    textAlign: 'center',
+  },
+  resetButton: {
+    marginTop: SIZES.padding.large,
+    paddingVertical: SIZES.padding.small,
+    paddingHorizontal: SIZES.padding.medium,
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.borderRadius.medium,
+  },
+  resetButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

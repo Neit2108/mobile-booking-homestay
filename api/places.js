@@ -53,13 +53,26 @@ export const getTopRatedPlaces = async (limit = 5) => {
 export const getAllPlaces = async (params = {}) => {
   try {
     const response = await apiClient.get("/places/get-all", { params });
-    return response.data;
+    
+    // Ensure each place has images array
+    const places = response.data.map((place) => {
+      if (!place.images || place.images.length === 0) {
+        place.images = [
+          {
+            imageUrl: `https://source.unsplash.com/random/300x200/?hotel,${place.id}`,
+          },
+        ];
+      }
+      return place;
+    });
+    
+    return places;
   } catch (error) {
     console.error("Error fetching all places:", error);
 
     // For development/fallback, return mock data
     if (process.env.NODE_ENV !== "production") {
-      return getMockPlaces(10);
+      return getMockPlaces(params.limit || 10);
     }
 
     throw handleApiError(error);
@@ -86,28 +99,6 @@ export const getPlaceById = async (id) => {
     } else if (!Array.isArray(response.data.images)) {
       // If images is not an array, convert it to an array
       response.data.images = [response.data.images];
-    }
-
-    // Add more images for testing the carousel (in development only)
-    if (
-      process.env.NODE_ENV !== "production" &&
-      response.data.images.length < 3
-    ) {
-      const extraImages = [
-        {
-          id: "extra1",
-          imageUrl: `https://source.unsplash.com/random/800x600/?interior,${id}`,
-        },
-        {
-          id: "extra2",
-          imageUrl: `https://source.unsplash.com/random/800x600/?room,${id}`,
-        },
-        {
-          id: "extra3",
-          imageUrl: `https://source.unsplash.com/random/800x600/?view,${id}`,
-        },
-      ];
-      response.data.images = [...response.data.images, ...extraImages];
     }
 
     return response.data;
@@ -166,16 +157,61 @@ export const postPlaceReview = async (reviewData) => {
 };
 
 /**
- * Search places by name or location
+ * Search places by name, address, or description
  * @param {string} query - Search query
+ * @param {Object} filters - Optional filter parameters
  * @returns {Promise} - Response data
  */
-export const searchPlaces = async (query) => {
+export const searchPlaces = async (query, filters = {}) => {
   try {
-    const response = await apiClient.get(`/places/search?q=${query}`);
-    return response.data;
+    // In a real app, you would pass both query and filters to the backend
+    // For now, we'll fetch all places and filter locally
+    const response = await apiClient.get("/places/get-all");
+    
+    let results = response.data;
+    
+    // Apply search filter
+    if (query && query.trim() !== '') {
+      const searchLower = query.toLowerCase();
+      results = results.filter(place => 
+        (place.name?.toLowerCase() || '').includes(searchLower) || 
+        (place.address?.toLowerCase() || '').includes(searchLower) ||
+        (place.description?.toLowerCase() || '').includes(searchLower)
+      );
+    }
+    
+    // Ensure each place has images array
+    results = results.map((place) => {
+      if (!place.images || place.images.length === 0) {
+        place.images = [
+          {
+            imageUrl: `https://source.unsplash.com/random/300x200/?hotel,${place.id}`,
+          },
+        ];
+      }
+      return place;
+    });
+    
+    return results;
   } catch (error) {
     console.error("Error searching places:", error);
+    
+    // For development/fallback, return mock data
+    if (process.env.NODE_ENV !== "production") {
+      const mockPlaces = getMockPlaces(20);
+      
+      if (query && query.trim() !== '') {
+        const searchLower = query.toLowerCase();
+        return mockPlaces.filter(place => 
+          place.name.toLowerCase().includes(searchLower) || 
+          place.location.toLowerCase().includes(searchLower) ||
+          (place.description || '').toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return mockPlaces;
+    }
+    
     throw handleApiError(error);
   }
 };
@@ -235,17 +271,16 @@ const handleApiError = (error) => {
 const getMockPlaceDetails = (id) => {
   const mockPlace = {
     id: id,
-    name: `Port Friedaberg Apartment`,
-    address: `8714 Anthony Fork, Connstad, Germany`,
-    location: `Connstad, Germany`,
-    category: Math.random() > 0.5 ? "Hotel" : "Apartment",
-    price: 5000000,
-    rating: 4.8,
-    numOfRating: 320,
+    name: `Port Friedaberg Apartment ${id}`,
+    address: `8714 Anthony Fork, Connstad, Vietnam`,
+    category: Math.random() > 0.5 ? "Hotel" : "Homestay",
+    price: Math.floor(Math.random() * 5000000) + 1000000,
+    rating: (Math.random() * 2 + 3).toFixed(1),
+    numOfRating: Math.floor(Math.random() * 320) + 10,
     images: [
       {
         id: "img1",
-        imageUrl: `https://source.unsplash.com/random/800x600/?landscape,${id}`,
+        imageUrl: `https://source.unsplash.com/random/800x600/?homestay,${id}`,
       },
       {
         id: "img2",
@@ -260,7 +295,7 @@ const getMockPlaceDetails = (id) => {
         imageUrl: `https://source.unsplash.com/random/800x600/?bathroom,${id}`,
       },
     ],
-    maxGuests: 6,
+    maxGuests: Math.floor(Math.random() * 4) + 2,
     description: `Harum sapiente dolores at et ipsum reprehenderit. Ex corrupti dolorem ut non natus sapiente possimus dolore. Enim adipisci voluptates in totam. Commodi eveniet magni. Doloribus aut blanditiis.`,
   };
 
@@ -353,12 +388,12 @@ const getMockReviews = (placeId) => {
  */
 const getMockPlaces = (count = 5) => {
   const locations = [
-    { city: "San Diego", state: "CA" },
-    { city: "Los Angeles", state: "CA" },
-    { city: "Honolulu", state: "HI" },
-    { city: "New York", state: "NY" },
-    { city: "Miami", state: "FL" },
-    { city: "Santa Monica", state: "CA" },
+    { city: "Ha Noi", country: "Vietnam" },
+    { city: "Ho Chi Minh", country: "Vietnam" },
+    { city: "Da Nang", country: "Vietnam" },
+    { city: "Nha Trang", country: "Vietnam" },
+    { city: "Da Lat", country: "Vietnam" },
+    { city: "Hoi An", country: "Vietnam" },
   ];
 
   const placeNames = [
@@ -374,26 +409,29 @@ const getMockPlaces = (count = 5) => {
     "Sunset Palms Resort",
   ];
 
+  const categories = ["Hotel", "Homestay", "Resort", "Villa", "Apartment"];
+
   return Array.from({ length: count }, (_, i) => {
     const location = locations[Math.floor(Math.random() * locations.length)];
     const name = placeNames[Math.floor(Math.random() * placeNames.length)];
-    const price = formatPrice(Math.floor(Math.random() * 400) + 100); // Random price between 100-500
+    const price = Math.floor(Math.random() * 5000000) + 1000000; // Random price between 1M-6M VND
     const rating = (Math.random() * 2 + 3).toFixed(1); // Random rating between 3.0-5.0
     const numOfRating = Math.floor(Math.random() * 500) + 50;
+    const category = categories[Math.floor(Math.random() * categories.length)];
 
     return {
       id: i + 1,
       name: `${name} ${i + 1}`,
-      address: `${location.city}, ${location.state}`,
-      location: `${location.city}, ${location.state}`,
-      category: Math.random() > 0.5 ? "Hotel" : "Villa",
+      address: `${location.city}, ${location.country}`,
+      location: `${location.city}, ${location.country}`,
+      category: category,
       price: price,
       rating: parseFloat(rating),
       numOfRating: numOfRating,
       images: [
         {
           id: i + 1,
-          imageUrl: `https://source.unsplash.com/random/300x200/?hotel,${
+          imageUrl: `https://source.unsplash.com/random/300x200/?${category.toLowerCase()},${
             i + 1
           }`,
         },

@@ -14,34 +14,44 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
 import { formatPrice } from '../../utils/formatPrice';
 
-const FilterModal = ({ visible, onClose, onApply, initialFilters }) => {
+const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
   const [filters, setFilters] = useState({
     priceMin: 0,
-    priceMax: 1000,
+    priceMax: 10000000, // 10 million VND as default max
     rating: 0,
+    sortBy: '',
     ...initialFilters,
   });
 
   useEffect(() => {
-    if (initialFilters) {
+    if (visible && initialFilters) {
       setFilters({
         priceMin: initialFilters.priceMin || 0,
-        priceMax: initialFilters.priceMax || 1000,
+        priceMax: initialFilters.priceMax || 10000000,
         rating: initialFilters.rating || 0,
+        sortBy: initialFilters.sortBy || '',
       });
     }
-  }, [initialFilters]);
+  }, [initialFilters, visible]);
 
   const handleReset = () => {
     setFilters({
       priceMin: 0,
-      priceMax: 1000,
+      priceMax: 10000000,
       rating: 0,
+      sortBy: '',
     });
   };
 
   const handleApply = () => {
     onApply(filters);
+  };
+
+  const handleSortOptionChange = (option) => {
+    setFilters(prev => ({
+      ...prev,
+      sortBy: prev.sortBy === option ? '' : option // Toggle off if already selected
+    }));
   };
 
   const renderStars = (count) => {
@@ -50,13 +60,13 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters }) => {
       .map((_, index) => (
         <TouchableOpacity 
           key={index} 
-          onPress={() => setFilters({ ...filters, rating: index + 1 })}
+          onPress={() => setFilters({ ...filters, rating: index + 1 === filters.rating ? 0 : index + 1 })}
           style={styles.starButton}
         >
           <Ionicons
-            name={index < count ? 'star' : 'star-outline'}
+            name={index < filters.rating ? 'star' : 'star-outline'}
             size={24}
-            color={index < count ? '#FFD700' : COLORS.text.secondary}
+            color={index < filters.rating ? '#FFD700' : COLORS.text.secondary}
           />
         </TouchableOpacity>
       ));
@@ -85,15 +95,15 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters }) => {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Price Range</Text>
                   <View style={styles.priceLabels}>
-                    <Text style={styles.priceLabel}>{formatPrice(filters.priceMin)} VNĐ</Text>
-                    <Text style={styles.priceLabel}>{formatPrice(filters.priceMax)} VNĐ</Text>
+                    <Text style={styles.priceLabel}>{formatPrice(filters?.priceMin)} VNĐ</Text>
+                    <Text style={styles.priceLabel}>{formatPrice(filters?.priceMax)} VNĐ</Text>
                   </View>
                   <View style={styles.sliderContainer}>
                     <Slider
                       style={styles.slider}
                       minimumValue={0}
-                      maximumValue={1000}
-                      step={10}
+                      maximumValue={10000000}
+                      step={100000}
                       value={filters.priceMin}
                       onValueChange={(value) => setFilters({ ...filters, priceMin: value })}
                       minimumTrackTintColor={COLORS.primary}
@@ -103,8 +113,8 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters }) => {
                     <Slider
                       style={styles.slider}
                       minimumValue={0}
-                      maximumValue={1000}
-                      step={10}
+                      maximumValue={10000000}
+                      step={100000}
                       value={filters.priceMax}
                       onValueChange={(value) => setFilters({ ...filters, priceMax: value })}
                       minimumTrackTintColor={COLORS.primary}
@@ -123,6 +133,83 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters }) => {
                   <Text style={styles.ratingLabel}>
                     {filters.rating > 0 ? `${filters.rating} stars & up` : 'Any rating'}
                   </Text>
+                </View>
+
+                {/* Sort Options */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Sort By</Text>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.sortOption,
+                      filters.sortBy === 'highest-rating' && styles.sortOptionSelected
+                    ]}
+                    onPress={() => handleSortOptionChange('highest-rating')}
+                  >
+                    <Text style={[
+                      styles.sortOptionText,
+                      filters.sortBy === 'highest-rating' && styles.sortOptionTextSelected
+                    ]}>
+                      Highest Rating
+                    </Text>
+                    {filters.sortBy === 'highest-rating' && (
+                      <Ionicons name="checkmark" size={18} color="white" />
+                    )}
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.sortOption,
+                      filters.sortBy === 'most-rated' && styles.sortOptionSelected
+                    ]}
+                    onPress={() => handleSortOptionChange('most-rated')}
+                  >
+                    <Text style={[
+                      styles.sortOptionText,
+                      filters.sortBy === 'most-rated' && styles.sortOptionTextSelected
+                    ]}>
+                      Most Reviewed
+                    </Text>
+                    {filters.sortBy === 'most-rated' && (
+                      <Ionicons name="checkmark" size={18} color="white" />
+                    )}
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.sortOption,
+                      filters.sortBy === 'price-low-high' && styles.sortOptionSelected
+                    ]}
+                    onPress={() => handleSortOptionChange('price-low-high')}
+                  >
+                    <Text style={[
+                      styles.sortOptionText,
+                      filters.sortBy === 'price-low-high' && styles.sortOptionTextSelected
+                    ]}>
+                      Price: Low to High
+                    </Text>
+                    {filters.sortBy === 'price-low-high' && (
+                      <Ionicons name="checkmark" size={18} color="white" />
+                    )}
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.sortOption,
+                      filters.sortBy === 'price-high-low' && styles.sortOptionSelected
+                    ]}
+                    onPress={() => handleSortOptionChange('price-high-low')}
+                  >
+                    <Text style={[
+                      styles.sortOptionText,
+                      filters.sortBy === 'price-high-low' && styles.sortOptionTextSelected
+                    ]}>
+                      Price: High to Low
+                    </Text>
+                    {filters.sortBy === 'price-high-low' && (
+                      <Ionicons name="checkmark" size={18} color="white" />
+                    )}
+                  </TouchableOpacity>
                 </View>
               </ScrollView>
               
@@ -173,7 +260,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: SIZES.padding.large,
-    maxHeight: 400,
+    maxHeight: 500,
   },
   section: {
     marginVertical: SIZES.padding.medium,
@@ -207,11 +294,32 @@ const styles = StyleSheet.create({
   },
   starButton: {
     marginRight: SIZES.padding.small,
+    padding: 5, // Larger touch area
   },
   ratingLabel: {
     fontSize: 14,
     color: COLORS.text.secondary,
     marginTop: SIZES.padding.small,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SIZES.padding.medium,
+    paddingHorizontal: SIZES.padding.medium,
+    backgroundColor: COLORS.background.secondary,
+    borderRadius: SIZES.borderRadius.small,
+    marginBottom: SIZES.padding.small,
+  },
+  sortOptionSelected: {
+    backgroundColor: COLORS.primary,
+  },
+  sortOptionText: {
+    fontSize: 14,
+    color: COLORS.text.primary,
+  },
+  sortOptionTextSelected: {
+    color: 'white',
   },
   footer: {
     flexDirection: 'row',

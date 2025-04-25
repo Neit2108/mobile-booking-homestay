@@ -13,7 +13,7 @@ import TabNavigator from './TabNavigator';
 import AllPlacesScreen from '../screens/places/AllPlacesScreen';
 import PlaceDetailsScreen from '../screens/places/PlaceDetailsScreen';
 
-// Import search screens directly for debugging
+// Search screens
 import SearchScreen from '../screens/search/SearchScreen';
 import SearchResultsScreen from '../screens/search/SearchResultsScreen';
 import RecentlyViewedScreen from '../screens/search/RecentlyViewedScreen';
@@ -35,8 +35,6 @@ const AuthStack = () => {
 };
 
 const AppStack = () => {
-  console.log('Setting up AppStack Navigation');
-  
   return (
     <Stack.Navigator
       screenOptions={{
@@ -53,7 +51,8 @@ const AppStack = () => {
         component={SearchScreen} 
         options={{
           animationEnabled: true,
-          presentation: 'card'
+          presentation: 'modal', // Use modal presentation for better UX
+          cardStyle: { borderTopLeftRadius: 20, borderTopRightRadius: 20 } // Fix missing corner issue
         }}
       />
       <Stack.Screen 
@@ -78,14 +77,12 @@ const AppStack = () => {
 
 const AppNavigator = () => {
   const { token, loading } = useAuth();
-  console.log('AppNavigator - Auth state:', { token: !!token, loading });
 
   if (loading) {
     // You could return a loading screen here
     return null;
   }
 
-  // Return AuthStack by default if token is not present (not logged in)
   return token ? <AppStack /> : <AuthStack />;
 };
 
