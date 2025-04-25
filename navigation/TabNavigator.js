@@ -1,35 +1,85 @@
-// Updated TabNavigator.js
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SHADOWS } from '../constants/theme';
+import { Platform } from 'react-native';
+import { COLORS } from '../constants/theme';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
 import BookingsScreen from '../screens/bookings/BookingsScreen';
 import MessagesScreen from '../screens/messages/MessagesScreen';
-import ProfileScreen from '../screens/profile/ProfileScreen';
+import ProfileTabNavigator from './ProfileTabNavigator';
 
 // Custom Tab Bar Component
-import BottomTabBar from '../components/navigation/BottomTabBar';
+import CustomBottomTab from '../components/navigation/CustomBottomTab';
 
 const Tab = createBottomTabNavigator();
 
+/**
+ * Main Tab Navigator component
+ * Handles bottom tab navigation between main app sections
+ */
 const TabNavigator = () => {
   return (
     <Tab.Navigator
-      tabBar={(props) => <BottomTabBar {...props} />} // Use custom tab bar
+      tabBar={(props) => <CustomBottomTab {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false, // Hide default labels since our custom bar has them
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.text.secondary,
+        tabBarStyle: {
+          height: Platform.OS === 'ios' ? 80 : 60,
+          borderTopWidth: 1,
+          borderTopColor: COLORS.border,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
       }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Bookings" component={BookingsScreen} />
-      <Tab.Screen name="Messages" component={MessagesScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+          tabBarLabel: 'Home',
+        }}
+      />
+      
+      <Tab.Screen 
+        name="Bookings" 
+        component={BookingsScreen} 
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+          tabBarLabel: 'My Booking',
+        }}
+      />
+      
+      <Tab.Screen 
+        name="Messages" 
+        component={MessagesScreen} 
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
+          ),
+          tabBarLabel: 'Message',
+        }}
+      />
+      
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileTabNavigator} 
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
+          ),
+          tabBarLabel: 'Profile',
+        }}
+      />
     </Tab.Navigator>
   );
 };
