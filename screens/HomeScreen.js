@@ -4,9 +4,7 @@ import {
   Text, 
   StyleSheet, 
   ScrollView, 
-  TouchableOpacity,
   StatusBar,
-  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -20,7 +18,7 @@ import RecommendedSection from '../components/home/RecommendedSection';
 import BestTodaySection from '../components/home/BestTodaySection';
 
 // API
-import { getTopRatedPlaces } from '../api/places';
+import { getTopRatedPlaces, getAllPlaces } from '../api/places';
 
 // Theme
 import { COLORS, SIZES } from '../constants/theme';
@@ -36,6 +34,7 @@ const HomeScreen = () => {
   const [popularPlaces, setPopularPlaces] = useState([]);
   const [recommendedPlaces, setRecommendedPlaces] = useState([]);
   const [bestTodayPlaces, setBestTodayPlaces] = useState([]);
+  const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Tất cả');
 
@@ -45,13 +44,23 @@ const HomeScreen = () => {
     const fetchPlaces = async () => {
       try {
         setLoading(true);
+        // Load top rated places for the Popular section
         const topRated = await getTopRatedPlaces(5);
-        
-        // For now, we'll use the same data for all sections
-        // In a real app, you'd call different endpoints
         setPopularPlaces(topRated);
-        setRecommendedPlaces(topRated.slice().reverse());
-        setBestTodayPlaces(topRated.slice(0, 5));
+        
+        // Load all places for other sections
+        const allPlaces = await getAllPlaces();
+        setPlaces(allPlaces);
+        
+        // Sort differently for recommended places (could be based on user preferences in a real app)
+        const recommended = [...allPlaces].sort((a, b) => b.numOfRating - a.numOfRating);
+        setRecommendedPlaces(recommended);
+        
+        // For BestToday, pick places with special offers or best ratings
+        const bestToday = [...allPlaces]
+          .sort((a, b) => b.rating - a.rating)
+          .slice(0, 5);
+        setBestTodayPlaces(bestToday);
       } catch (error) {
         console.error('Error fetching places:', error);
       } finally {
@@ -66,16 +75,32 @@ const HomeScreen = () => {
     setSelectedCategory(category);
   };
 
+  // Navigate to AllPlaces screen with the appropriate data
   const handleSeeAllPopular = () => {
-    navigation.navigate('AllPlaces', { title: 'Most Popular', data: popularPlaces });
+    console.log('See All Popular clicked');
+    navigation.navigate('AllPlaces', { 
+      title: 'Most Popular', 
+      data: places,
+      sourceType: 'popular'
+    });
   };
 
   const handleSeeAllRecommended = () => {
-    navigation.navigate('AllPlaces', { title: 'Recommended For You', data: recommendedPlaces });
+    console.log('See All Recommended clicked');
+    navigation.navigate('AllPlaces', { 
+      title: 'Recommended For You', 
+      data: places,
+      sourceType: 'recommended'
+    });
   };
 
   const handleSeeAllBestToday = () => {
-    navigation.navigate('AllPlaces', { title: 'Best Today', data: bestTodayPlaces });
+    console.log('See All Best Today clicked');
+    navigation.navigate('AllPlaces', { 
+      title: 'Best Today', 
+      data: places,
+      sourceType: 'bestToday'
+    });
   };
   
   const handlePlacePress = (place) => {
@@ -84,12 +109,6 @@ const HomeScreen = () => {
 
   // Navigate to search screen
   const navigateToSearch = () => {
-    console.log('Navigating to Search screen from HomeScreen');
-    
-    // List available routes for debugging
-    const routes = navigation.getState()?.routes;
-    console.log('Available routes:', routes.map(route => route.name));
-    
     navigation.navigate('Search');
   };
 

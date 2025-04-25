@@ -169,6 +169,7 @@ export const useHomestayFiltering = (places = []) => {
     setRatingFilter,
     setGuestsFilter,
     setSortOption,
+    setPriceRange,
     
     // Pagination
     currentPage,

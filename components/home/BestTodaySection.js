@@ -2,10 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
-import PlaceCard from '../cards/PlaceCard';
 import { formatPrice } from '../../utils/formatPrice';
 
-const BestTodaySection = ({ data = [], loading = false, onSeeAll }) => {
+const BestTodaySection = ({ data = [], loading = false, onSeeAll, onPlacePress }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -21,7 +20,7 @@ const BestTodaySection = ({ data = [], loading = false, onSeeAll }) => {
           <Text style={styles.title}>Lựa chọn hôm nay</Text>
           <Ionicons name="flame" size={18} color="#FF6B00" style={styles.fireIcon} />
         </View>
-        <TouchableOpacity onPress={onSeeAll}>
+        <TouchableOpacity onPress={onSeeAll} testID="see-all-best-today">
           <Text style={styles.seeAll}>Tất cả</Text>
         </TouchableOpacity>
       </View>
@@ -35,16 +34,17 @@ const BestTodaySection = ({ data = [], loading = false, onSeeAll }) => {
         renderItem={({ item }) => {
           // Some items might have a discount price
           const hasDiscount = item.originalPrice && item.originalPrice > item.price;
+          const imageUrl = item.imageUrl || (item.images && item.images.length > 0 ? item.images[0].imageUrl : null);
           
           return (
             <TouchableOpacity 
               style={styles.cardContainer}
               activeOpacity={0.9}
-              onPress={() => {}}
+              onPress={() => onPlacePress && onPlacePress(item)}
             >
               <View style={styles.imageContainer}>
                 <Image 
-                  source={{ uri: item.imageUrl || item.images?.[0]?.imageUrl }} 
+                  source={{ uri: imageUrl }} 
                   style={styles.image}
                   resizeMode="cover"
                 />
@@ -57,17 +57,17 @@ const BestTodaySection = ({ data = [], loading = false, onSeeAll }) => {
               </View>
               
               <View style={styles.cardContent}>
-                <Text style={styles.placeName} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.placeName} numberOfLines={1}>{item.name || ''}</Text>
                 <View style={styles.locationContainer}>
                   <Ionicons name="location-outline" size={14} color={COLORS.text.secondary} />
-                  <Text style={styles.locationText} numberOfLines={1}>{item.location || item.address}</Text>
+                  <Text style={styles.locationText} numberOfLines={1}>{item.location || item.address || ''}</Text>
                 </View>
                 
                 <View style={styles.priceContainer}>
                   {hasDiscount && (
                     <Text style={styles.originalPrice}>{formatPrice(item.originalPrice)} VNĐ</Text>
                   )}
-                  <Text style={styles.price}>{formatPrice(item.price)} VNĐ</Text>
+                  <Text style={styles.price}>{formatPrice(item.price || 0)} VNĐ</Text>
                 </View>
               </View>
             </TouchableOpacity>

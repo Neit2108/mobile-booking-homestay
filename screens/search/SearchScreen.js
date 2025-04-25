@@ -10,6 +10,9 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -75,8 +78,6 @@ const SearchScreen = () => {
   }, []);
 
   const loadRecentItems = async () => {
-    // In a real app, you would fetch this from AsyncStorage or a similar persistence mechanism
-    // For now, we'll load some sample data
     try {
       setLoading(true);
       const topPlaces = await getAllPlaces({ limit: 5 });
@@ -112,9 +113,6 @@ const SearchScreen = () => {
 
       if (existingIndex === -1) {
         setRecentSearches((prev) => [newSearch, ...prev.slice(0, 4)]);
-        
-        // In a real app, save this to AsyncStorage
-        // AsyncStorage.setItem('recentSearches', JSON.stringify([newSearch, ...recentSearches.slice(0, 4)]))
       }
 
       // Navigate to results with search query
@@ -127,8 +125,6 @@ const SearchScreen = () => {
 
   const handleClearAll = () => {
     setRecentSearches([]);
-    // In a real app, clear from AsyncStorage too
-    // AsyncStorage.removeItem('recentSearches')
   };
 
   const handleRecentItemPress = (item) => {
@@ -212,62 +208,69 @@ const SearchScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      ) : (
-        <View style={styles.content}>
-          {/* Recent Searches */}
-          {recentSearches.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Recent Searches</Text>
-                <TouchableOpacity onPress={handleClearAll}>
-                  <Text style={styles.clearAllText}>Clear All</Text>
-                </TouchableOpacity>
-              </View>
+      {/* Wrap content in KeyboardAvoidingView and ScrollView */}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidView}
+      >
+        <ScrollView 
+          style={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Content */}
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+          ) : (
+            <View>
+              {/* Recent Searches */}
+              {recentSearches.length > 0 && (
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Recent Searches</Text>
+                    <TouchableOpacity onPress={handleClearAll}>
+                      <Text style={styles.clearAllText}>Clear All</Text>
+                    </TouchableOpacity>
+                  </View>
 
-              <FlatList
-                data={recentSearches}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <RecentSearchItem
-                    item={item}
-                    onPress={() => handleRecentItemPress(item)}
-                  />
-                )}
-                scrollEnabled={false}
-              />
+                  {recentSearches.map(item => (
+                    <RecentSearchItem
+                      key={item.id}
+                      item={item}
+                      onPress={() => handleRecentItemPress(item)}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {/* Recently Viewed */}
+              {recentlyViewed.length > 0 && (
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Recently Viewed</Text>
+                    <TouchableOpacity onPress={handleSeeAll}>
+                      <Text style={styles.seeAllText}>See All</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {recentlyViewed.map(item => (
+                    <RecentlyViewedItem
+                      key={item.id.toString()}
+                      item={item}
+                      onPress={() => handleViewedItemPress(item)}
+                    />
+                  ))}
+                </View>
+              )}
             </View>
           )}
-
-          {/* Recently Viewed */}
-          {recentlyViewed.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Recently Viewed</Text>
-                <TouchableOpacity onPress={handleSeeAll}>
-                  <Text style={styles.seeAllText}>See All</Text>
-                </TouchableOpacity>
-              </View>
-
-              <FlatList
-                data={recentlyViewed}
-                keyExtractor={(item) => item.id?.toString()}
-                renderItem={({ item }) => (
-                  <RecentlyViewedItem
-                    item={item}
-                    onPress={() => handleViewedItemPress(item)}
-                  />
-                )}
-                scrollEnabled={false}
-              />
-            </View>
-          )}
-        </View>
-      )}
+          
+          {/* Add extra space at the bottom */}
+          <View style={styles.bottomSpace} />
+        </ScrollView>
+      </KeyboardAvoidingView>
       
       {/* Filter Modal */}
       <FilterSearchModal
@@ -284,6 +287,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background.primary,
+  },
+  keyboardAvoidView: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 30,
   },
   header: {
     flexDirection: "row",
@@ -326,17 +338,14 @@ const styles = StyleSheet.create({
   filterButton: {
     padding: SIZES.padding.small,
   },
-  content: {
-    flex: 1,
+  section: {
+    marginBottom: SIZES.padding.large,
     paddingHorizontal: SIZES.padding.large,
   },
   loadingContainer: {
-    flex: 1,
+    height: 200,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  section: {
-    marginBottom: SIZES.padding.large,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -351,7 +360,7 @@ const styles = StyleSheet.create({
   },
   clearAllText: {
     fontSize: 14,
-    color: "#FF6B8B", // Pink color from the design
+    color: "#FF6B8B",
   },
   seeAllText: {
     fontSize: 14,
@@ -396,7 +405,7 @@ const styles = StyleSheet.create({
   recentlyViewedImage: {
     width: 100,
     height: 100,
-    backgroundColor: COLORS.background.secondary, // Placeholder color while loading
+    backgroundColor: COLORS.background.secondary,
   },
   recentlyViewedContent: {
     flex: 1,
@@ -437,6 +446,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: COLORS.primary,
+  },
+  bottomSpace: {
+    height: 50,
   },
 });
 

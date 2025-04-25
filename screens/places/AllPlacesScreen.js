@@ -18,7 +18,7 @@ import PlaceCard from '../../components/cards/PlaceCard';
 import FilterModal from '../../components/modals/FilterModal';
 
 // API
-import { getAllPlaces, searchPlaces } from '../../api/places';
+import { getAllPlaces, getTopRatedPlaces } from '../../api/places';
 
 // Theme
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
@@ -26,31 +26,52 @@ import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 const AllPlacesScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { title, data: initialData } = route.params || { title: 'All Places', data: [] };
+  const { title = 'All Places', data: initialData = [], sourceType = '' } = route.params || {};
 
   const [places, setPlaces] = useState(initialData || []);
   const [filteredPlaces, setFilteredPlaces] = useState([]);
-  const [loading, setLoading] = useState(!initialData);
+  const [loading, setLoading] = useState(!initialData || initialData.length === 0);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filters, setFilters] = useState({
     priceMin: 0,
-    priceMax: 1000,
+    priceMax: 10000000,
     rating: 0,
   });
 
+  // Fetch places based on the source type if no initial data
   useEffect(() => {
     if (!initialData || initialData.length === 0) {
-      fetchPlaces();
+      fetchPlacesByType();
     } else {
       setFilteredPlaces(initialData);
     }
-  }, [initialData]);
+  }, [initialData, sourceType]);
 
-  const fetchPlaces = async () => {
+  // Fetch different types of place data based on source type
+  const fetchPlacesByType = async () => {
     try {
       setLoading(true);
-      const data = await getAllPlaces();
+      let data = [];
+      
+      switch (sourceType) {
+        case 'popular':
+          data = await getTopRatedPlaces(10);
+          break;
+        case 'recommended':
+          // Get all places and sort by number of ratings (more realistic would be based on user preferences)
+          data = await getAllPlaces();
+          data.sort((a, b) => b.numOfRating - a.numOfRating);
+          break;
+        case 'bestToday':
+          // Get all places and sort by rating
+          data = await getAllPlaces();
+          data.sort((a, b) => b.rating - a.rating);
+          break;
+        default:
+          data = await getAllPlaces();
+      }
+      
       setPlaces(data);
       setFilteredPlaces(data);
     } catch (error) {
@@ -60,7 +81,8 @@ const AllPlacesScreen = () => {
     }
   };
 
-  const handleSearch = async (query) => {
+  // Handle search input change
+  const handleSearch = (query) => {
     setSearchQuery(query);
     
     if (query.trim() === '') {
@@ -72,14 +94,15 @@ const AllPlacesScreen = () => {
     // Filter locally based on name or location
     const filtered = places.filter(
       place => 
-        place.name.toLowerCase().includes(query.toLowerCase()) ||
-        (place.location && place.location.toLowerCase().includes(query.toLowerCase())) ||
-        (place.address && place.address.toLowerCase().includes(query.toLowerCase()))
+        (place.name?.toLowerCase() || '').includes(query.toLowerCase()) ||
+        (place.location?.toLowerCase() || '').includes(query.toLowerCase()) ||
+        (place.address?.toLowerCase() || '').includes(query.toLowerCase())
     );
     
     setFilteredPlaces(filtered);
   };
 
+  // Apply price and rating filters
   const applyFilters = (placesToFilter, filterSettings) => {
     const filtered = placesToFilter.filter(place => {
       const price = place.price || 0;
@@ -92,12 +115,45 @@ const AllPlacesScreen = () => {
       );
     });
     
+    // Apply sorting if specified
+    if (filterSettings.sortBy) {
+      filtered.sort((a, b) => {
+        switch (filterSettings.sortBy) {
+          case 'price-low-high':
+            return (a.price || 0) - (b.price || 0);
+          case 'price-high-low':
+            return (b.price || 0) - (a.price || 0);
+          case 'highest-rating':
+            return (b.rating || 0) - (a.rating || 0);
+          case 'most-rated':
+            return (b.numOfRating || 0) - (a.numOfRating || 0);
+          default:
+            return 0;
+        }
+      });
+    }
+    
     setFilteredPlaces(filtered);
   };
 
+  // Handle filter application
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
-    applyFilters(places, newFilters);
+    
+    // First filter by search query if any
+    let searchResults = places;
+    if (searchQuery) {
+      searchResults = places.filter(
+        place => 
+          (place.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+          (place.location?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+          (place.address?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Then apply other filters
+    applyFilters(searchResults, newFilters);
+    
     setFilterModalVisible(false);
   };
 
@@ -141,6 +197,13 @@ const AllPlacesScreen = () => {
         >
           <Ionicons name="options-outline" size={20} color={COLORS.text.primary} />
         </TouchableOpacity>
+      </View>
+      
+      {/* Results counter */}
+      <View style={styles.resultsCountContainer}>
+        <Text style={styles.resultsCount}>
+          {filteredPlaces.length} {filteredPlaces.length === 1 ? 'result' : 'results'} found
+        </Text>
       </View>
       
       {/* Results */}
@@ -238,6 +301,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  resultsCountContainer: {
+    paddingHorizontal: SIZES.padding.large,
+    marginBottom: SIZES.padding.medium,
+  },
+  resultsCount: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+  },
   listContent: {
     paddingHorizontal: SIZES.padding.large,
     paddingBottom: SIZES.padding.large * 2,
@@ -265,6 +336,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.text.secondary,
     marginTop: SIZES.padding.small,
+    textAlign: 'center',
   },
 });
 

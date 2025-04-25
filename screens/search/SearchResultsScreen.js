@@ -35,6 +35,7 @@ const SearchResultsScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [allPlaces, setAllPlaces] = useState([]);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [localFilters, setLocalFilters] = useState(routeFilters);
   
   // Initialize filtering hook with all places
   const {
@@ -64,7 +65,7 @@ const SearchResultsScreen = () => {
       if (routeFilters.priceMin !== undefined || routeFilters.priceMax !== undefined) {
         setPriceRange({
           min: routeFilters.priceMin || 0,
-          max: routeFilters.priceMax || 1000
+          max: routeFilters.priceMax || 10000000
         });
       }
       
@@ -75,6 +76,8 @@ const SearchResultsScreen = () => {
       if (routeFilters.sortBy) {
         setSortOption(routeFilters.sortBy);
       }
+      
+      setLocalFilters(routeFilters);
     }
   }, [query, routeFilters]);
 
@@ -82,16 +85,14 @@ const SearchResultsScreen = () => {
     try {
       setIsLoading(true);
       
-      // If search query exists, use search API with any applied filters
-      let data;
-      if (query.trim()) {
-        data = await searchPlaces(query, routeFilters);
-      } else {
-        // Otherwise get all places
-        data = await getAllPlaces();
-      }
+      // First, get all places so we have a complete dataset to filter locally
+      const allPlacesData = await getAllPlaces();
+      setAllPlaces(allPlacesData);
       
-      setAllPlaces(data);
+      // This ensures we have data even if the search API fails
+      if (query.trim()) {
+        setSearchTerm(query.trim());
+      }
     } catch (error) {
       console.error('Error fetching places:', error);
     } finally {
@@ -107,11 +108,9 @@ const SearchResultsScreen = () => {
       // Navigate with new query to refresh route params
       navigation.setParams({ 
         query: localSearchQuery,
-        location
+        location,
+        filters: localFilters
       });
-      
-      // Re-fetch from API with new search term
-      fetchPlaces();
     }
   };
 
@@ -124,7 +123,7 @@ const SearchResultsScreen = () => {
   };
 
   const handleApplyFilters = (newFilters) => {
-    // Apply filters
+    // Apply filters locally
     if (newFilters.priceMin !== undefined || newFilters.priceMax !== undefined) {
       setPriceRange({
         min: newFilters.priceMin,
@@ -140,7 +139,23 @@ const SearchResultsScreen = () => {
       setSortOption(newFilters.sortBy);
     }
     
+    // Save filters to state
+    setLocalFilters(newFilters);
+    
+    // Close modal
     setFilterModalVisible(false);
+  };
+
+  // Handle resetting all filters
+  const handleResetAllFilters = () => {
+    resetFilters();
+    setLocalSearchQuery('');
+    setLocalFilters({});
+    navigation.setParams({ 
+      query: '', 
+      location: '', 
+      filters: {} 
+    });
   };
 
   // Get paginated results
@@ -158,11 +173,7 @@ const SearchResultsScreen = () => {
       <Ionicons name="search-outline" size={50} color={COLORS.text.secondary} />
       <Text style={styles.emptyText}>No results found</Text>
       <Text style={styles.emptySubText}>Try adjusting your search or filters</Text>
-      <TouchableOpacity style={styles.resetButton} onPress={() => {
-        resetFilters();
-        setLocalSearchQuery('');
-        navigation.setParams({ query: '', location: '', filters: {} });
-      }}>
+      <TouchableOpacity style={styles.resetButton} onPress={handleResetAllFilters}>
         <Text style={styles.resetButtonText}>Reset All Filters</Text>
       </TouchableOpacity>
     </View>
@@ -245,11 +256,7 @@ const SearchResultsScreen = () => {
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
         onApply={handleApplyFilters}
-        initialFilters={{
-          priceMin: routeFilters.priceMin,
-          priceMax: routeFilters.priceMax,
-          rating: routeFilters.rating
-        }}
+        initialFilters={localFilters}
       />
     </SafeAreaView>
   );

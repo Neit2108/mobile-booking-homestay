@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   ScrollView,
+  TextInput,
 } from 'react-native';
 
-import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
 import { formatPrice } from '../../utils/formatPrice';
@@ -23,6 +23,10 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
     ...initialFilters,
   });
 
+  // Text input states for price range (to avoid slider issues)
+  const [minPriceText, setMinPriceText] = useState(filters.priceMin.toString());
+  const [maxPriceText, setMaxPriceText] = useState(filters.priceMax.toString());
+
   useEffect(() => {
     if (visible && initialFilters) {
       setFilters({
@@ -31,6 +35,9 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
         rating: initialFilters.rating || 0,
         sortBy: initialFilters.sortBy || '',
       });
+      
+      setMinPriceText(initialFilters.priceMin?.toString() || '0');
+      setMaxPriceText(initialFilters.priceMax?.toString() || '10000000');
     }
   }, [initialFilters, visible]);
 
@@ -41,10 +48,19 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
       rating: 0,
       sortBy: '',
     });
+    setMinPriceText('0');
+    setMaxPriceText('10000000');
   };
 
   const handleApply = () => {
-    onApply(filters);
+    // Ensure price values are numbers before applying
+    const appliedFilters = {
+      ...filters,
+      priceMin: parseInt(minPriceText, 10) || 0,
+      priceMax: parseInt(maxPriceText, 10) || 10000000
+    };
+    
+    onApply(appliedFilters);
   };
 
   const handleSortOptionChange = (option) => {
@@ -72,6 +88,20 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
       ));
   };
 
+  // Handle price input changes
+  const handlePriceInputChange = (value, isMin) => {
+    // Remove non-numeric characters
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    if (isMin) {
+      setMinPriceText(numericValue);
+      setFilters(prev => ({ ...prev, priceMin: parseInt(numericValue, 10) || 0 }));
+    } else {
+      setMaxPriceText(numericValue);
+      setFilters(prev => ({ ...prev, priceMax: parseInt(numericValue, 10) || 10000000 }));
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -94,34 +124,42 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
                 {/* Price Range */}
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Price Range</Text>
-                  <View style={styles.priceLabels}>
-                    <Text style={styles.priceLabel}>{formatPrice(filters?.priceMin)} VNĐ</Text>
-                    <Text style={styles.priceLabel}>{formatPrice(filters?.priceMax)} VNĐ</Text>
+                  
+                  {/* Price input fields instead of sliders */}
+                  <View style={styles.priceInputContainer}>
+                    <View style={styles.priceInputWrapper}>
+                      <Text style={styles.priceInputLabel}>Min Price</Text>
+                      <TextInput
+                        style={styles.priceInput}
+                        value={minPriceText}
+                        onChangeText={(text) => handlePriceInputChange(text, true)}
+                        keyboardType="numeric"
+                        placeholder="0"
+                      />
+                      <Text style={styles.priceCurrency}>VNĐ</Text>
+                    </View>
+                    
+                    <View style={styles.priceSeparator}>
+                      <Text style={styles.priceSeparatorText}>to</Text>
+                    </View>
+                    
+                    <View style={styles.priceInputWrapper}>
+                      <Text style={styles.priceInputLabel}>Max Price</Text>
+                      <TextInput
+                        style={styles.priceInput}
+                        value={maxPriceText}
+                        onChangeText={(text) => handlePriceInputChange(text, false)}
+                        keyboardType="numeric"
+                        placeholder="10,000,000"
+                      />
+                      <Text style={styles.priceCurrency}>VNĐ</Text>
+                    </View>
                   </View>
-                  <View style={styles.sliderContainer}>
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={0}
-                      maximumValue={10000000}
-                      step={100000}
-                      value={filters.priceMin}
-                      onValueChange={(value) => setFilters({ ...filters, priceMin: value })}
-                      minimumTrackTintColor={COLORS.primary}
-                      maximumTrackTintColor={COLORS.border}
-                      thumbTintColor={COLORS.primary}
-                    />
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={0}
-                      maximumValue={10000000}
-                      step={100000}
-                      value={filters.priceMax}
-                      onValueChange={(value) => setFilters({ ...filters, priceMax: value })}
-                      minimumTrackTintColor={COLORS.primary}
-                      maximumTrackTintColor={COLORS.border}
-                      thumbTintColor={COLORS.primary}
-                    />
-                  </View>
+                  
+                  {/* Price display */}
+                  <Text style={styles.priceRangeDisplay}>
+                    {formatPrice(parseInt(minPriceText, 10) || 0)} - {formatPrice(parseInt(maxPriceText, 10) || 10000000)} VNĐ
+                  </Text>
                 </View>
                 
                 {/* Rating */}
@@ -271,21 +309,48 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     marginBottom: SIZES.padding.medium,
   },
-  priceLabels: {
+  priceInputContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: SIZES.padding.small,
+    marginVertical: SIZES.padding.small,
   },
-  priceLabel: {
+  priceInputWrapper: {
+    flex: 1,
+  },
+  priceInputLabel: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    marginBottom: 4,
+  },
+  priceInput: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: SIZES.borderRadius.small,
+    paddingHorizontal: SIZES.padding.small,
+    marginBottom: 4,
+  },
+  priceCurrency: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+    textAlign: 'right',
+  },
+  priceSeparator: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  priceSeparatorText: {
     fontSize: 14,
     color: COLORS.text.secondary,
   },
-  sliderContainer: {
-    marginBottom: SIZES.padding.small,
-  },
-  slider: {
-    width: '100%',
-    height: 40,
+  priceRangeDisplay: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: SIZES.padding.small,
   },
   starsContainer: {
     flexDirection: 'row',

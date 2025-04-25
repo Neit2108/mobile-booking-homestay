@@ -1,4 +1,3 @@
-// Updated PlaceCard.js
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +16,10 @@ const PlaceCard = ({
   imageStyle = {},
   style = {}
 }) => {
+  if (!item) {
+    return null; // Return null if item is undefined
+  }
+
   const getCardStyle = () => {
     switch (variant) {
       case 'popular':
@@ -42,6 +45,7 @@ const PlaceCard = ({
   };
 
   const { containerStyle, imageStyle: variantImageStyle, infoStyle } = getCardStyle();
+  const imageUrl = item.imageUrl || (item.images && item.images.length > 0 ? item.images[0].imageUrl : null);
 
   return (
     <TouchableOpacity
@@ -51,7 +55,7 @@ const PlaceCard = ({
     >
       <View style={styles.imageContainer}>
         <Image
-          source={{ uri: item.imageUrl || item.images?.[0]?.imageUrl }}
+          source={{ uri: imageUrl }}
           style={[variantImageStyle, imageStyle]}
           resizeMode="cover"
         />
@@ -68,20 +72,21 @@ const PlaceCard = ({
       </View>
       
       <View style={infoStyle}>
-        <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.name} numberOfLines={1}>{item.name || ''}</Text>
         <Text style={styles.location} numberOfLines={1}>
-          {item.location || item.address}
+          {item.location || item.address || ''}
         </Text>
         
         <View style={styles.priceRatingContainer}>
           <Text style={styles.price}>
-            <Text style={styles.priceValue}>{formatPrice(item.price) || 0} VNĐ</Text>/ ngày
+            <Text style={styles.priceValue}>{formatPrice(item.price) || 0}</Text>
+            <Text style={styles.priceUnit}> VNĐ/ ngày</Text>
           </Text>
           
-          {item.rating && (
+          {item.rating !== undefined && (
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={14} color="#FFD700" />
-              <Text style={styles.rating}>{item.rating.toFixed(1)}</Text>
+              <Text style={styles.rating}>{(item.rating || 0).toFixed(1)}</Text>
             </View>
           )}
         </View>
@@ -192,6 +197,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: COLORS.primary,
+  },
+  priceUnit: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
   },
   ratingContainer: {
     flexDirection: 'row',

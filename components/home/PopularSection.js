@@ -17,7 +17,7 @@ const PopularSection = ({ data = [], loading = false, onSeeAll, onPlacePress }) 
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Lựa chọn hàng đầu</Text>
-        <TouchableOpacity onPress={onSeeAll}>
+        <TouchableOpacity onPress={onSeeAll} testID="see-all-popular">
           <Text style={styles.seeAll}>Tất cả</Text>
         </TouchableOpacity>
       </View>
