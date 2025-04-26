@@ -1,23 +1,25 @@
-import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
-import { useAuth } from '../context/AuthContext';
+import React from "react";
+import { createStackNavigator } from "@react-navigation/stack";
+import { useAuth } from "../context/AuthContext";
 
 // Auth screens
-import LoginScreen from '../screens/auth/LoginScreen';
-import RegisterScreen from '../screens/auth/RegisterScreen';
+import LoginScreen from "../screens/auth/LoginScreen";
+import RegisterScreen from "../screens/auth/RegisterScreen";
 
 // Tab Navigator
-import TabNavigator from './TabNavigator';
+import TabNavigator from "./TabNavigator";
 
 // Stack Screens
-import AllPlacesScreen from '../screens/places/AllPlacesScreen';
-import PlaceDetailsScreen from '../screens/places/PlaceDetailsScreen';
-import AllReviewsScreen from '../screens/places/AllReviewsScreen';
+import AllPlacesScreen from "../screens/places/AllPlacesScreen";
+import PlaceDetailsScreen from "../screens/places/PlaceDetailsScreen";
+import AllReviewsScreen from "../screens/places/AllReviewsScreen";
 
 // Search screens
-import SearchScreen from '../screens/search/SearchScreen';
-import SearchResultsScreen from '../screens/search/SearchResultsScreen';
-import RecentlyViewedScreen from '../screens/search/RecentlyViewedScreen';
+import SearchScreen from "../screens/search/SearchScreen";
+import SearchResultsScreen from "../screens/search/SearchResultsScreen";
+import RecentlyViewedScreen from "../screens/search/RecentlyViewedScreen";
+
+import PersonalInfoScreen from "../screens/profile/PersonalInfoScreen";
 
 const Stack = createStackNavigator();
 
@@ -46,29 +48,37 @@ const AppStack = () => {
       <Stack.Screen name="AllPlaces" component={AllPlacesScreen} />
       <Stack.Screen name="PlaceDetails" component={PlaceDetailsScreen} />
       <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
-      <Stack.Screen 
-        name="Search" 
-        component={SearchScreen} 
+      <Stack.Screen
+        name="Search"
+        component={SearchScreen}
         options={{
           animationEnabled: true,
-          presentation: 'modal',
-          cardStyle: { borderTopLeftRadius: 20, borderTopRightRadius: 20 }
+          presentation: "modal",
+          cardStyle: { borderTopLeftRadius: 20, borderTopRightRadius: 20 },
         }}
       />
-      <Stack.Screen 
-        name="SearchResults" 
+      <Stack.Screen
+        name="SearchResults"
         component={SearchResultsScreen}
         options={{
           animationEnabled: true,
-          presentation: 'card'
+          presentation: "card",
         }}
       />
-      <Stack.Screen 
-        name="RecentlyViewed" 
+      <Stack.Screen
+        name="RecentlyViewed"
         component={RecentlyViewedScreen}
         options={{
           animationEnabled: true,
-          presentation: 'card'
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="PersonalInfo"
+        component={PersonalInfoScreen}
+        options={{
+          headerShown: false,
+          animationEnabled: true,
         }}
       />
     </Stack.Navigator>

@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS, SIZES } from '../../constants/theme';
 import LogoutModal from '../../components/modals/LogoutModal';
@@ -14,12 +15,13 @@ import SettingItem from '../../components/profile/SettingItem';
 import ProfileHeader from '../../components/profile/ProfileHeader';
 
 const ProfileSettingsScreen = () => {
+  const navigation = useNavigation();
   const { user, logout } = useAuth();
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
   const handleEditProfile = () => {
-    // Navigate to edit profile screen
-    console.log('Navigate to edit profile');
+    // Navigate to the PersonalInfoScreen
+    navigation.navigate('PersonalInfo', { userData: user });
   };
 
   const handleSettingPress = (setting) => {
@@ -55,6 +57,12 @@ const ProfileSettingsScreen = () => {
         {/* Settings */}
         <View style={styles.settingsSection}>
           <Text style={styles.sectionTitle}>Setting</Text>
+          
+          <SettingItem
+            icon="person-outline"
+            title="Personal Information"
+            onPress={handleEditProfile}
+          />
           
           <SettingItem
             icon="card-outline"
@@ -131,7 +139,6 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.padding.small,
     paddingHorizontal: SIZES.padding.large,
   },
-
   logoutButton: {
     alignItems: 'center',
     paddingVertical: SIZES.padding.large,

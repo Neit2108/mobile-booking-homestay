@@ -1,7 +1,15 @@
-import ProfileScreen from './ProfileScreen';
+import PersonalInfoScreen from './PersonalInfoScreen';
+import { navigateToPersonalInfo, EditProfileButton } from './utils/ProfileSettingsScreenNavigate';
 
 export {
-  ProfileScreen
+  PersonalInfoScreen,
+  navigateToPersonalInfo,
+  EditProfileButton
 };
 
-export default ProfileScreen;
+// Default export for flexibility
+export default {
+  PersonalInfoScreen,
+  navigateToPersonalInfo,
+  EditProfileButton
+};
