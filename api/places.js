@@ -115,6 +115,40 @@ export const getPlaceById = async (id) => {
 };
 
 /**
+ * Get places in the same category as the specified place
+ * @param {number} id - Place ID to find similar places for
+ * @returns {Promise} - Response data with similar places
+ */
+export const getSameCategoryPlaces = async (id) => {
+  try {
+    const response = await apiClient.get(`/places/get-same-category/${id}`);
+    
+    // Ensure each place has images array
+    const places = response.data.map((place) => {
+      if (!place.images || place.images.length === 0) {
+        place.images = [
+          {
+            imageUrl: `https://source.unsplash.com/random/300x200/?hotel,${place.id}`,
+          },
+        ];
+      }
+      return place;
+    });
+    
+    return places;
+  } catch (error) {
+    console.error(`Error fetching same category places for place ${id}:`, error);
+
+    // For development/fallback, return mock data
+    if (process.env.NODE_ENV !== "production") {
+      return getMockSameCategoryPlaces(id);
+    }
+
+    throw handleApiError(error);
+  }
+};
+
+/**
  * Get place reviews by place ID
  * @param {number} placeId - Place ID
  * @returns {Promise} - Response data
@@ -226,10 +260,10 @@ export const canCommentOnPlace = async (placeId) => {
     const response = await apiClient.get(`/bookings/can-comment/${placeId}`);
     return response.data;
   } catch (error) {
-    console.error(
-      `Error checking comment permission for place ${placeId}:`,
-      error
-    );
+    // console.error(
+    //   `Error checking comment permission for place ${placeId}:`,
+    //   error
+    // );
     return { canComment: false, message: "Failed to check comment permission" };
   }
 };
@@ -300,6 +334,35 @@ const getMockPlaceDetails = (id) => {
   };
 
   return mockPlace;
+};
+
+/**
+ * Generate mock same category places for development
+ * @param {number} id - Original place ID
+ * @returns {Array} - Mock same category places
+ */
+const getMockSameCategoryPlaces = (id) => {
+  const category = Math.random() > 0.5 ? "Hotel" : "Homestay";
+  return Array.from({ length: 5 }, (_, index) => {
+    const placeId = id + index + 1;
+    return {
+      id: placeId,
+      name: `${category} ${placeId}`,
+      address: `${Math.floor(Math.random() * 9000) + 1000} Chestnut Street, Rome, NY 13440`,
+      category: category,
+      price: Math.floor(Math.random() * 200) + 80,
+      rating: (Math.random() * 2 + 3).toFixed(1),
+      numOfRating: Math.floor(Math.random() * 500) + 30,
+      images: [
+        {
+          id: "img1",
+          imageUrl: `https://source.unsplash.com/random/300x200/?${category.toLowerCase()},${placeId}`,
+        }
+      ],
+      maxGuests: Math.floor(Math.random() * 4) + 2,
+      description: `A beautiful ${category.toLowerCase()} with excellent amenities and friendly staff.`
+    };
+  });
 };
 
 /**
@@ -451,4 +514,5 @@ export default {
   postPlaceReview,
   searchPlaces,
   canCommentOnPlace,
+  getSameCategoryPlaces,
 };

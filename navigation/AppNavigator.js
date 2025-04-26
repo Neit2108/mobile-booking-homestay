@@ -12,6 +12,7 @@ import TabNavigator from './TabNavigator';
 // Stack Screens
 import AllPlacesScreen from '../screens/places/AllPlacesScreen';
 import PlaceDetailsScreen from '../screens/places/PlaceDetailsScreen';
+import AllReviewsScreen from '../screens/places/AllReviewsScreen';
 
 // Search screens
 import SearchScreen from '../screens/search/SearchScreen';
@@ -44,15 +45,14 @@ const AppStack = () => {
       <Stack.Screen name="TabNavigator" component={TabNavigator} />
       <Stack.Screen name="AllPlaces" component={AllPlacesScreen} />
       <Stack.Screen name="PlaceDetails" component={PlaceDetailsScreen} />
-      
-      {/* Search-related screens */}
+      <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
       <Stack.Screen 
         name="Search" 
         component={SearchScreen} 
         options={{
           animationEnabled: true,
-          presentation: 'modal', // Use modal presentation for better UX
-          cardStyle: { borderTopLeftRadius: 20, borderTopRightRadius: 20 } // Fix missing corner issue
+          presentation: 'modal',
+          cardStyle: { borderTopLeftRadius: 20, borderTopRightRadius: 20 }
         }}
       />
       <Stack.Screen 

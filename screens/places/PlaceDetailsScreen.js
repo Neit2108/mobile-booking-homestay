@@ -16,18 +16,61 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 // API
-import { getPlaceById, getPlaceReviews } from '../../api/places';
+import { getPlaceById, getPlaceReviews, getSameCategoryPlaces, canCommentOnPlace } from '../../api/places';
 
 // Theme
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
 // Components
 import CustomButton from '../../components/buttons/CustomButton';
-import RatingSection from '../../components/ratings/RatingSection';
 import ReviewsSection from '../../components/ratings/ReviewsSection';
+import AddReviewModal from '../../components/modals/AddReviewModal';
 import { formatPrice } from '../../utils/formatPrice';
 
 const { width } = Dimensions.get('window');
+
+// Facility Item Component
+const FacilityItem = ({ icon, name }) => (
+  <View style={styles.facilityItem}>
+    <View style={styles.facilityIconContainer}>
+      <Ionicons name={icon} size={20} color={COLORS.primary} />
+    </View>
+    <Text style={styles.facilityName}>{name}</Text>
+  </View>
+);
+
+// Recommendation Item Component - Style like the image
+const RecommendationItem = ({ item, onPress }) => {
+  return (
+    <TouchableOpacity 
+      style={styles.recommendationItem} 
+      onPress={onPress}
+      activeOpacity={0.9}
+    >
+      <Image
+        source={{ uri: item.images?.[0]?.imageUrl || 'https://via.placeholder.com/150x100' }}
+        style={styles.recommendationImage}
+      />
+      <View style={styles.recommendationContent}>
+        <Text style={styles.recommendationName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.recommendationAddress} numberOfLines={1}>
+          {item.address?.split(',')[0] || 'Location'}
+        </Text>
+        <View style={styles.recommendationBottom}>
+          <Text style={styles.recommendationPrice}>
+            {formatPrice(item.price || 0)} VNĐ/ ngày
+          </Text>
+          <View style={styles.recommendationRating}>
+            <Ionicons name="star" size={14} color="#FFD700" />
+            <Text style={styles.recommendationRatingText}>
+              {item.rating?.toFixed(1) || '0.0'}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const PlaceDetailsScreen = () => {
   const navigation = useNavigation();
@@ -38,14 +81,20 @@ const PlaceDetailsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [favorite, setFavorite] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [expandedDescription, setExpandedDescription] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [canReview, setCanReview] = useState(false);
   
   const flatListRef = useRef(null);
   
   useEffect(() => {
     fetchPlaceDetails();
     fetchReviews();
+    fetchRecommendations();
+    checkCanReview();
   }, [id]);
   
   const fetchPlaceDetails = async () => {
@@ -69,7 +118,29 @@ const PlaceDetailsScreen = () => {
       setReviews(reviewsData);
     } catch (err) {
       console.error('Error fetching reviews:', err);
-      // Don't set error state here to keep the UI usable even if reviews fail to load
+      // We'll use empty reviews but won't show an error
+      setReviews([]);
+    }
+  };
+  
+  const fetchRecommendations = async () => {
+    try {
+      const sameCategoryPlaces = await getSameCategoryPlaces(id);
+      setRecommendations(sameCategoryPlaces.filter(p => p.id !== parseInt(id)));
+    } catch (err) {
+      console.error('Error fetching recommendations:', err);
+      setRecommendations([]);
+    }
+  };
+  
+  const checkCanReview = async () => {
+    try {
+      const result = await canCommentOnPlace(id);
+      setCanReview(result.canComment);
+    } catch (err) {
+      console.error('Error checking review permission:', err);
+      // For testing, we'll allow reviewing - in production you may want to set this to false
+      setCanReview(true);
     }
   };
   
@@ -81,15 +152,35 @@ const PlaceDetailsScreen = () => {
     setFavorite(!favorite);
   };
   
+  const toggleDescription = () => {
+    setExpandedDescription(!expandedDescription);
+  };
+  
   const handleBookNow = () => {
     // Navigate to booking screen
     navigation.navigate('Booking', { placeId: id });
+  };
+
+  const handleOpenMap = () => {
+    // Could navigate to a map screen or open in external map app
+    console.log('Open map for location:', place?.address);
   };
   
   const handleReviewAdded = () => {
     // Refresh place details and reviews
     fetchPlaceDetails();
     fetchReviews();
+    setCanReview(false); // User has now reviewed
+  };
+
+  const navigateToAllReviews = () => {
+    navigation.navigate('AllReviews', { 
+      placeId: id, 
+      placeName: place.name,
+      reviews: reviews,
+      rating: place.rating || 0,
+      reviewCount: place.numOfRating || 0
+    });
   };
 
   const renderImageItem = ({ item, index }) => (
@@ -107,6 +198,11 @@ const PlaceDetailsScreen = () => {
     // Calculate current index
     const newIndex = Math.floor(contentOffset.x / viewSize.width);
     setCurrentImageIndex(newIndex);
+  };
+
+  const handleRecommendationPress = (placeId) => {
+    // Navigate to the details of the recommended place
+    navigation.push('PlaceDetails', { id: placeId });
   };
   
   if (loading) {
@@ -137,10 +233,15 @@ const PlaceDetailsScreen = () => {
   if (images.length === 0) {
     images.push({ id: 'default', imageUrl: 'https://via.placeholder.com/400x300' });
   }
+
+  // Create a truncated description for the collapsed state
+  const shortDescription = place.description?.length > 100 
+    ? `${place.description.substring(0, 100)}...` 
+    : place.description;
   
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
       {/* Image Carousel */}
       <View style={styles.imageCarouselContainer}>
@@ -176,6 +277,10 @@ const PlaceDetailsScreen = () => {
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacity>
           
+          <View style={styles.headerTitle}>
+            <Text style={styles.headerTitleText}>Detail</Text>
+          </View>
+          
           <TouchableOpacity style={styles.headerButton} onPress={toggleFavorite}>
             <Ionicons 
               name={favorite ? "heart" : "heart-outline"} 
@@ -186,89 +291,169 @@ const PlaceDetailsScreen = () => {
         </View>
       </View>
       
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {/* Title and Rating */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>{place.name}</Text>
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={16} color="#FFD700" />
-              <Text style={styles.rating}>{place.rating?.toFixed(1) || '0.0'}</Text>
-            </View>
-          </View>
-          
-          {/* Location */}
-          <View style={styles.locationContainer}>
-            <Ionicons name="location-outline" size={16} color={COLORS.text.secondary} />
-            <Text style={styles.location}>{place.address || place.location}</Text>
-          </View>
-          
-          {/* Price */}
-          <View style={styles.priceContainer}>
-            <Text style={styles.price}>
-              <Text style={styles.priceValue}>{formatPrice(place.price) || 0} VNĐ</Text>
-              <Text style={styles.priceNight}> / ngày</Text>
-            </Text>
-          </View>
-          
-          {/* Description */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Mô tả</Text>
-            <Text style={styles.description}>{place.description || 'No description available.'}</Text>
-          </View>
-          
-          {/* Details */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Chi tiết</Text>
-            <View style={styles.detailsGrid}>
-              <View style={styles.detailItem}>
-                <Ionicons name="people-outline" size={24} color={COLORS.primary} />
-                <Text style={styles.detailText}>Tối đa {place.maxGuests || 2} khách</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Ionicons name="bed-outline" size={24} color={COLORS.primary} />
-                <Text style={styles.detailText}>{Math.ceil((place.maxGuests || 2) / 2)} phòng ngủ</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Ionicons name="water-outline" size={24} color={COLORS.primary} />
-                <Text style={styles.detailText}>{Math.ceil((place.maxGuests || 2) / 2)} phòng tắm</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Ionicons name="wifi-outline" size={24} color={COLORS.primary} />
-                <Text style={styles.detailText}>Wifi</Text>
+      {/* Main Content */}
+      <View style={styles.contentContainer}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.mainContent}>
+            {/* Title and Rating */}
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>{place.name}</Text>
+              <View style={styles.locationRatingRow}>
+                <View style={styles.locationPin}>
+                  <Ionicons name="location" size={16} color={COLORS.primary} />
+                  <Text style={styles.locationText}>
+                    {place.address?.split(',').slice(0, 2).join(', ') || place.location}
+                  </Text>
+                </View>
+                
+                <View style={styles.ratingContainer}>
+                  <Ionicons name="star" size={16} color="#FFD700" />
+                  <Text style={styles.rating}>{place.rating?.toFixed(1) || '0.0'}</Text>
+                </View>
               </View>
             </View>
+            
+            {/* Common Facilities - MOVED ABOVE DESCRIPTION */}
+            <View style={styles.facilitiesSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Cơ sở vật chất</Text>
+                <TouchableOpacity>
+                  <Text style={styles.seeAllText}>Xem thêm</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.facilitiesContainer}>
+                <FacilityItem icon="snow-outline" name="AC" />
+                <FacilityItem icon="restaurant-outline" name="Restaurant" />
+                <FacilityItem icon="water-outline" name="Swimming Pool" />
+                <FacilityItem icon="time-outline" name="24-Hours Front Desk" />
+              </View>
+            </View>
+
+            {/* Description Section */}
+            <View style={styles.descriptionSection}>
+              <Text style={styles.sectionTitle}>Mô tả</Text>
+              <Text style={styles.description}>
+                {expandedDescription ? place.description : shortDescription}
+              </Text>
+              {place.description?.length > 100 && (
+                <TouchableOpacity onPress={toggleDescription}>
+                  <Text style={styles.readMoreText}>
+                    {expandedDescription ? 'Thu gọn' : 'Xem thêm'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {/* Reviews */}
+            <View style={styles.reviewsSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Đánh giá</Text>
+                <TouchableOpacity onPress={navigateToAllReviews}>
+                  <Text style={styles.seeAllText}>Xem thêm</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {reviews && reviews.length > 0 ? (
+                <ReviewsSection 
+                  placeId={place.id}
+                  reviews={reviews.slice(0, 2)} // Only show first 2 reviews
+                />
+              ) : (
+                <View style={styles.emptyReviewsContainer}>
+                  <Text style={styles.emptyReviewsText}>
+                    Hãy trở thành người đầu tiên đánh giá!
+                  </Text>
+                </View>
+              )}
+
+              {/* Add review button - only show if user can review */}
+              {canReview && (
+                <TouchableOpacity 
+                  style={styles.addReviewButton}
+                  onPress={() => setShowReviewModal(true)}
+                >
+                  <Ionicons name="star-outline" size={16} color={COLORS.primary} />
+                  <Text style={styles.addReviewText}>Đánh giá</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {/* Recommendations */}
+            <View style={styles.recommendationsSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Tương tự</Text>
+                <TouchableOpacity>
+                  <Text style={styles.seeAllText}>Xem thêm</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {/* <View style={styles.recommendationsHeader}>
+                <Text style={styles.recommendationsHeaderTitle}>Gợi ý cho bạn</Text>
+                <TouchableOpacity>
+                  <Text style={styles.recommendationsHeaderSeeAll}>Tất cả</Text>
+                </TouchableOpacity>
+              </View> */}
+
+              {recommendations && recommendations.length > 0 ? (
+                <FlatList
+                  data={recommendations}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => `recommendation-${item.id}`}
+                  renderItem={({ item }) => (
+                    <RecommendationItem 
+                      item={item}
+                      onPress={() => handleRecommendationPress(item.id)}
+                    />
+                  )}
+                  contentContainerStyle={styles.recommendationsContainer}
+                />
+              ) : (
+                <View style={styles.emptyRecommendationsContainer}>
+                  <Text style={styles.emptyRecommendationsText}>
+                    Không có gợi ý nào
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Bottom spacing to account for fixed bottom bar */}
+            <View style={{ height: 100 }} />
           </View>
-          
-          {/* Ratings & Reviews */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Đánh giá</Text>
-            <RatingSection 
-              rating={place.rating || 0} 
-              numOfRating={place.numOfRating || 0} 
-              placeId={place.id}
-              onReviewAdded={handleReviewAdded}
-            />
-            <ReviewsSection 
-              placeId={place.id}
-              reviews={reviews}
-            />
-          </View>
-          
-          {/* Placeholder for more sections like amenities, reviews, etc. */}
-          <View style={styles.bottomSpace} />
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
       
-      {/* Book Now Button */}
-      <View style={styles.footer}>
+      {/* Fixed Bottom Bar - Price and Book Now */}
+      <View style={styles.bottomBar}>
+        <View style={styles.priceContainer}>
+          <Text style={styles.priceLabel}>Giá</Text>
+          <Text style={styles.priceValue}>
+            {formatPrice(place.price || 0)} VND
+          </Text>
+        </View>
+        
         <CustomButton
-          title="Đặt ngay"
+          title="Booking Now"
           onPress={handleBookNow}
           style={styles.bookButton}
         />
       </View>
-    </SafeAreaView>
+
+      {/* Review Modal */}
+      <AddReviewModal
+        visible={showReviewModal}
+        onClose={(reviewSubmitted) => {
+          setShowReviewModal(false);
+          if (reviewSubmitted) handleReviewAdded();
+        }}
+        placeId={place.id}
+        rating={0} // Default rating
+      />
+    </View>
   );
 };
 
@@ -306,15 +491,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  contentContainer: {
+    flex: 1,
+  },
   imageCarouselContainer: {
-    height: 300,
+    height: 250,
     width: '100%',
     position: 'relative',
-    backgroundColor: COLORS.background.secondary, // Add background color in case images take time to load
   },
   carouselImage: {
     width: width,
-    height: 300,
+    height: 250,
   },
   paginationContainer: {
     position: 'absolute',
@@ -339,114 +526,269 @@ const styles = StyleSheet.create({
   },
   headerButtons: {
     position: 'absolute',
-    top: 15,
+    top: 40,
     left: 0,
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: SIZES.padding.large,
+    alignItems: 'center',
+    paddingHorizontal: SIZES.padding.large,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  content: {
+  headerTitle: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitleText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  mainContent: {
     padding: SIZES.padding.large,
   },
   titleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SIZES.padding.small,
+    marginBottom: SIZES.padding.medium,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.text.primary,
+    marginBottom: SIZES.padding.small,
+  },
+  locationRatingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  locationPin: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
+  },
+  locationText: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    marginLeft: 4,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background.secondary,
+    backgroundColor: '#F9F9F9',
     paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     borderRadius: SIZES.borderRadius.small,
   },
   rating: {
-    fontSize: 14,
+    marginLeft: 4,
+    fontSize: 16,
     fontWeight: 'bold',
     color: COLORS.text.primary,
-    marginLeft: 4,
   },
-  locationContainer: {
+  descriptionSection: {
+    marginBottom: SIZES.padding.large,
+  },
+  facilitiesSection: {
+    marginBottom: SIZES.padding.large,
+  },
+  reviewsSection: {
+    marginBottom: SIZES.padding.large,
+  },
+  recommendationsSection: {
+    marginBottom: SIZES.padding.large,
+  },
+  sectionHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: SIZES.padding.medium,
-  },
-  location: {
-    fontSize: 16,
-    color: COLORS.text.secondary,
-    marginLeft: 4,
-  },
-  priceContainer: {
-    marginBottom: SIZES.padding.large,
-  },
-  price: {
-    fontSize: 18,
-  },
-  priceValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-  },
-  priceNight: {
-    color: COLORS.text.secondary,
-  },
-  section: {
-    marginBottom: SIZES.padding.large,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text.primary,
-    marginBottom: SIZES.padding.medium,
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: COLORS.primary,
   },
   description: {
-    fontSize: 16,
+    fontSize: 14,
     color: COLORS.text.secondary,
-    lineHeight: 24,
+    lineHeight: 22,
   },
-  detailsGrid: {
+  readMoreText: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '500',
+    marginTop: 8,
+  },
+  facilitiesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
-  detailItem: {
-    width: '50%',
-    flexDirection: 'row',
+  facilityItem: {
+    width: '22%',
     alignItems: 'center',
     marginBottom: SIZES.padding.medium,
   },
-  detailText: {
-    fontSize: 14,
+  facilityIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  facilityName: {
+    fontSize: 12,
     color: COLORS.text.primary,
-    marginLeft: SIZES.padding.small,
+    textAlign: 'center',
   },
-  bottomSpace: {
-    height: 30,
+  emptyReviewsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SIZES.padding.large,
+    backgroundColor: COLORS.background.secondary,
+    borderRadius: SIZES.borderRadius.medium,
   },
-  footer: {
+  emptyReviewsText: {
+    fontSize: 16,
+    color: COLORS.text.secondary,
+  },
+  addReviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SIZES.padding.medium,
+    paddingHorizontal: SIZES.padding.large,
+    backgroundColor: COLORS.background.secondary,
+    borderRadius: SIZES.borderRadius.medium,
+    marginTop: SIZES.padding.medium,
+  },
+  addReviewText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.primary,
+  },
+  recommendationsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SIZES.padding.small,
+  },
+  recommendationsHeaderTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+  },
+  recommendationsHeaderSeeAll: {
+    fontSize: 14,
+    color: COLORS.primary,
+  },
+  recommendationsContainer: {
+    paddingRight: SIZES.padding.large,
+  },
+  recommendationItem: {
+    width: width * 0.8,
+    backgroundColor: COLORS.background.primary,
+    borderRadius: SIZES.borderRadius.medium,
+    marginRight: SIZES.padding.medium,
+    overflow: 'hidden',
+    ...SHADOWS.small,
+  },
+  recommendationImage: {
+    width: '100%',
+    height: 150,
+  },
+  recommendationContent: {
     padding: SIZES.padding.medium,
+  },
+  recommendationName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+    marginBottom: 4,
+  },
+  recommendationAddress: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    marginBottom: 8,
+  },
+  recommendationBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  recommendationPrice: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  },
+  recommendationRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  recommendationRatingText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+    marginLeft: 4,
+  },
+  emptyRecommendationsContainer: {
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.background.secondary,
+    borderRadius: SIZES.borderRadius.medium,
+  },
+  emptyRecommendationsText: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+  },
+  // Fixed bottom bar
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SIZES.padding.large,
+    paddingVertical: SIZES.padding.medium,
+    backgroundColor: COLORS.background.primary,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    backgroundColor: COLORS.background.primary,
+    zIndex: 999, // Ensure it stays on top
+  },
+  priceContainer: {
+    flex: 1,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+  },
+  priceValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
   },
   bookButton: {
-    height: 50,
+    width: '60%',
   },
 });
 

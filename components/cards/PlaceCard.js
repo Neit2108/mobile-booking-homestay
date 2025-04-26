@@ -34,6 +34,12 @@ const PlaceCard = ({
           imageStyle: styles.verticalImage,
           infoStyle: styles.verticalInfo,
         };
+      case 'horizontal-slim':
+        return {
+          containerStyle: styles.horizontalSlimContainer,
+          imageStyle: styles.horizontalSlimImage,
+          infoStyle: styles.horizontalSlimInfo,
+        };
       case 'horizontal':
       default:
         return {
@@ -46,6 +52,9 @@ const PlaceCard = ({
 
   const { containerStyle, imageStyle: variantImageStyle, infoStyle } = getCardStyle();
   const imageUrl = item.imageUrl || (item.images && item.images.length > 0 ? item.images[0].imageUrl : null);
+
+  // Calculate discounted price (for horizontal-slim variant)
+  const originalPrice = Math.round(item.price * 1.2);
 
   return (
     <TouchableOpacity
@@ -77,19 +86,36 @@ const PlaceCard = ({
           {item.location || item.address || ''}
         </Text>
         
-        <View style={styles.priceRatingContainer}>
-          <Text style={styles.price}>
-            <Text style={styles.priceValue}>{formatPrice(item.price) || 0}</Text>
-            <Text style={styles.priceUnit}> VNĐ/ ngày</Text>
-          </Text>
-          
-          {item.rating !== undefined && (
+        {variant === 'horizontal-slim' ? (
+          // Special bottom section for horizontal-slim variant
+          <View style={styles.slimBottomContainer}>
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={14} color="#FFD700" />
-              <Text style={styles.rating}>{(item.rating || 0).toFixed(1)}</Text>
+              <Text style={styles.rating}>
+                {(item.rating || 0).toFixed(1)} ({item.numOfRating || 0})
+              </Text>
             </View>
-          )}
-        </View>
+            <View style={styles.priceRowContainer}>
+              <Text style={styles.oldPrice}>${originalPrice}</Text>
+              <Text style={styles.newPrice}>${item.price}</Text>
+            </View>
+          </View>
+        ) : (
+          // Standard price/rating display for other variants
+          <View style={styles.priceRatingContainer}>
+            <Text style={styles.price}>
+              <Text style={styles.priceValue}>{formatPrice(item.price) || 0}</Text>
+              <Text style={styles.priceUnit}> VNĐ/ ngày</Text>
+            </Text>
+            
+            {item.rating !== undefined && (
+              <View style={styles.ratingContainer}>
+                <Ionicons name="star" size={14} color="#FFD700" />
+                <Text style={styles.rating}>{(item.rating || 0).toFixed(1)}</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -134,6 +160,27 @@ const styles = StyleSheet.create({
   horizontalInfo: {
     flex: 1,
     padding: SIZES.padding.small,
+    justifyContent: 'space-between',
+  },
+  
+  // Horizontal-slim card styles (for recommendations)
+  horizontalSlimContainer: {
+    flexDirection: 'row',
+    width: width * 0.7,
+    height: 100,
+    marginRight: SIZES.padding.medium,
+    borderRadius: SIZES.borderRadius.medium,
+    overflow: 'hidden',
+    backgroundColor: COLORS.background.secondary,
+    ...SHADOWS.small,
+  },
+  horizontalSlimImage: {
+    width: 100,
+    height: 100,
+  },
+  horizontalSlimInfo: {
+    flex: 1,
+    padding: SIZES.padding.medium,
     justifyContent: 'space-between',
   },
   
@@ -212,6 +259,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text.primary,
   },
+  // Styles specific to the horizontal-slim variant
+  slimBottomContainer: {
+    marginTop: 4,
+  },
+  priceRowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  oldPrice: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+    textDecorationLine: 'line-through',
+    marginRight: 6,
+  },
+  newPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+  }
 });
 
 export default PlaceCard;

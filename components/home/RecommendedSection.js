@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, ActivityIndicator, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
 import PlaceCard from '../cards/PlaceCard';
 
-const RecommendedSection = ({ data = [], loading = false, onSeeAll, onPlacePress }) => {
+const { width } = Dimensions.get('window');
+
+const RecommendedSection = ({ data = [], loading = false, onSeeAll, onPlacePress, variant = 'vertical' }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -12,37 +14,47 @@ const RecommendedSection = ({ data = [], loading = false, onSeeAll, onPlacePress
     );
   }
 
-  // Only show first 2 items on home screen for a preview
-  const displayData = data.slice(0, 2);
+  // Only show first 2 items on home screen for a preview in vertical layout
+  const displayData = variant === 'vertical' ? data.slice(0, 2) : data;
+
+  // Determine FlatList props based on variant
+  const flatListProps = {
+    data: displayData,
+    keyExtractor: (item) => `recommended-${item.id}`,
+    renderItem: ({ item }) => (
+      <PlaceCard
+        item={item}
+        variant={variant === 'horizontal' ? 'horizontal-slim' : 'horizontal'}
+        onPress={() => onPlacePress && onPlacePress(item)}
+        onFavoritePress={() => {}}
+        style={variant === 'horizontal' ? styles.horizontalCard : {}}
+      />
+    ),
+    contentContainerStyle: variant === 'horizontal' ? styles.horizontalListContent : styles.listContent,
+    scrollEnabled: variant === 'horizontal',
+    horizontal: variant === 'horizontal',
+    showsHorizontalScrollIndicator: false
+  };
 
   return (
     <View style={styles.container}>
-      {/* Add header with title and "See All" button */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Gợi ý cho bạn</Text>
-        <TouchableOpacity onPress={onSeeAll} testID="see-all-recommended">
-          <Text style={styles.seeAll}>Tất cả</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Only show header if header props provided */}
+      {onSeeAll && (
+        <View style={styles.header}>
+          <Text style={styles.title}>Gợi ý cho bạn</Text>
+          <TouchableOpacity onPress={onSeeAll} testID="see-all-recommended">
+            <Text style={styles.seeAll}>Tất cả</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       
       <FlatList
-        data={displayData}
-        keyExtractor={(item) => `recommended-${item.id}`}
-        renderItem={({ item }) => (
-          <PlaceCard
-            item={item}
-            variant="horizontal"
-            onPress={() => onPlacePress && onPlacePress(item)}
-            onFavoritePress={() => {}}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
+        {...flatListProps}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>Không có gợi ý nào</Text>
           </View>
         }
-        scrollEnabled={false}
       />
     </View>
   );
@@ -72,6 +84,9 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: SIZES.padding.large,
   },
+  horizontalListContent: {
+    paddingLeft: SIZES.padding.large,
+  },
   loadingContainer: {
     height: 200,
     justifyContent: 'center',
@@ -89,6 +104,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.text.secondary,
   },
+  horizontalCard: {
+    width: width * 0.7,
+    marginRight: SIZES.padding.medium,
+  }
 });
 
 export default RecommendedSection;
