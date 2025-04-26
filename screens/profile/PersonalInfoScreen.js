@@ -19,89 +19,19 @@ import * as ImagePicker from 'expo-image-picker';
 // Components
 import CustomInput from '../../components/forms/CustomInput';
 import CustomButton from '../../components/buttons/CustomButton';
+import CustomDatePicker from '../../components/utils/CustomDatePicker'; // Using our custom component
+import GenderSelector from '../../components/utils/GenderSelector';
 
 // API and Context
 import { useAuth } from '../../context/AuthContext';
-import { getProfile, updateProfile, uploadImage, updateImage, deleteImage } from '../../api/user';
+import { getProfile, updateProfile, uploadImage, updateImage, deleteImage, setUserAuthToken } from '../../api/user';
 
 // Constants
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 
-/**
- * Custom Date Picker Component
- */
-const DatePicker = ({ label, value, onChange, error }) => {
-  const formatDate = (date) => {
-    if (!date) return '';
-    
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    
-    return `${day}/${month}/${year}`;
-  };
-
-  const handlePress = () => {
-    // In a real app, show a date picker
-    // For this example, just show alert
-    Alert.alert('Date Picker', 'In a real app, a date picker would open here.');
-  };
-
-  return (
-    <View style={styles.inputContainer}>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <TouchableOpacity
-        style={[styles.datePickerButton, error && styles.inputError]}
-        onPress={handlePress}
-      >
-        <Text style={value ? styles.dateText : styles.placeholderText}>
-          {value ? formatDate(value) : 'Select a date'}
-        </Text>
-        <Ionicons name="calendar-outline" size={20} color={COLORS.text.secondary} />
-      </TouchableOpacity>
-      {error && <Text style={styles.errorText}>{error}</Text>}
-    </View>
-  );
-};
-
-/**
- * Custom Gender Selector Component
- */
-const GenderSelector = ({ label, value, onChange, error }) => {
-  const options = ['Male', 'Female', 'Other'];
-
-  return (
-    <View style={styles.inputContainer}>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <View style={styles.genderOptions}>
-        {options.map((option) => (
-          <TouchableOpacity
-            key={option}
-            style={[
-              styles.genderOption,
-              value === option && styles.genderOptionSelected,
-            ]}
-            onPress={() => onChange(option)}
-          >
-            <Text
-              style={[
-                styles.genderOptionText,
-                value === option && styles.genderOptionTextSelected,
-              ]}
-            >
-              {option}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
-    </View>
-  );
-};
-
 const PersonalInfoScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { user, updateUserData } = useAuth();
+  const { user, token, updateUserData } = useAuth();
   
   // Get user data from route params if available
   const initialUserData = route?.params?.userData || user;
@@ -134,21 +64,36 @@ const PersonalInfoScreen = ({ route }) => {
   // Track initial form data to detect changes
   const [initialFormData, setInitialFormData] = useState({});
   
+  // Set auth token for API calls when component mounts
+  useEffect(() => {
+    if (token) {
+      setUserAuthToken(token);
+    }
+  }, [token]);
+  
   // Fetch user profile on mount to ensure latest data
   useEffect(() => {
-    fetchUserProfile();
-  }, []);
+    if (token) {
+      fetchUserProfile();
+    } else {
+      setIsLoadingProfile(false);
+      console.error('No authentication token available');
+      Alert.alert('Authentication Error', 'Please login again to update your profile');
+    }
+  }, [token]);
   
   // Function to fetch the latest user profile data
   const fetchUserProfile = async () => {
     try {
       setIsLoadingProfile(true);
-      const response = await getProfile();
+      // Pass token explicitly to ensure it's used
+      const response = await getProfile(token);
       
       if (response && response.data) {
         // Update form data with the latest profile information
         const userData = response.data;
-        setFormData({
+        
+        const updatedFormData = {
           fullName: userData.name || '',
           identityCard: userData.identityCard || '',
           gender: userData.gender || 'Male',
@@ -156,25 +101,29 @@ const PersonalInfoScreen = ({ route }) => {
           email: userData.email || '',
           phoneNumber: userData.phone || '',
           homeAddress: userData.add || '',
-        });
+        };
+        
+        setFormData(updatedFormData);
         
         // Set avatar URL
         setAvatar(userData.avatar || null);
         
         // Update initial form data to detect changes
-        setInitialFormData({
-          fullName: userData.name || '',
-          identityCard: userData.identityCard || '',
-          gender: userData.gender || 'Male',
-          birthDate: userData.birthday ? new Date(userData.birthday) : null,
-          email: userData.email || '',
-          phoneNumber: userData.phone || '',
-          homeAddress: userData.add || '',
-        });
+        setInitialFormData({...updatedFormData});
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      Alert.alert('Error', 'Failed to load user profile information');
+      
+      // Handle 401 errors specifically
+      if (error.statusCode === 401) {
+        Alert.alert(
+          'Session Expired', 
+          'Your login session has expired. Please log in again.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to load user profile information');
+      }
     } finally {
       setIsLoadingProfile(false);
     }
@@ -540,10 +489,11 @@ const PersonalInfoScreen = ({ route }) => {
                 error={errors.gender}
               />
               
-              <DatePicker
+              <CustomDatePicker
                 label="Birth Date"
                 value={formData.birthDate}
                 onChange={(date) => handleInputChange('birthDate', date)}
+                placeholder="Select your birth date"
                 error={errors.birthDate}
               />
               
@@ -672,64 +622,6 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     paddingHorizontal: SIZES.padding.large,
-  },
-  inputContainer: {
-    marginBottom: SIZES.padding.medium,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.text.primary,
-    marginBottom: 8,
-  },
-  datePickerButton: {
-    height: 50,
-    borderRadius: SIZES.borderRadius.medium,
-    backgroundColor: COLORS.background.secondary,
-    paddingHorizontal: SIZES.padding.medium,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  genderOptions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  genderOption: {
-    flex: 1,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background.secondary,
-    marginHorizontal: 4,
-    borderRadius: SIZES.borderRadius.medium,
-  },
-  genderOptionSelected: {
-    backgroundColor: COLORS.primary,
-  },
-  genderOptionText: {
-    color: COLORS.text.primary,
-    fontWeight: '500',
-  },
-  genderOptionTextSelected: {
-    color: 'white',
-  },
-  dateText: {
-    fontSize: 16,
-    color: COLORS.text.primary,
-  },
-  placeholderText: {
-    fontSize: 16,
-    color: COLORS.text.placeholder,
-  },
-  inputError: {
-    borderWidth: 1,
-    borderColor: COLORS.error,
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: 12,
-    marginTop: 4,
   },
   addressInput: {
     height: 100,

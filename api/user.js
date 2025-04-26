@@ -1,4 +1,5 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../constants/config';
 import { setAuthToken } from './auth';
 
@@ -10,13 +11,39 @@ const apiClient = axios.create({
   },
 });
 
+// Automatically set authorization header for every request
+apiClient.interceptors.request.use(
+  async (config) => {
+    try {
+      // Get token from AsyncStorage (not localStorage which is web-only)
+      const authToken = await AsyncStorage.getItem('authToken');
+      if (authToken) {
+        config.headers.Authorization = `Bearer ${authToken}`;
+      }
+    } catch (error) {
+      console.error('Error getting auth token from AsyncStorage', error);
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 /**
  * Get user profile
+ * @param {string} token - Optional token to use for this specific request
  * @returns {Promise} - Response data
  */
-export const getProfile = async () => {
+export const getProfile = async (token = null) => {
   try {
-    const response = await apiClient.get('/user/profile');
+    // If token is provided, use it for this specific request
+    const headers = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    
+    const response = await apiClient.get('/user/profile', { headers });
     return response.data;
   } catch (error) {
     throw handleApiError(error);
@@ -97,7 +124,9 @@ const handleApiError = (error) => {
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
-    if (error.response.data && error.response.data.message) {
+    if (error.response.status === 401) {
+      message = 'Authentication failed. Please login again.';
+    } else if (error.response.data && error.response.data.message) {
       message = error.response.data.message;
     } else {
       message = `Error ${error.response.status}: ${error.response.statusText}`;
@@ -112,12 +141,18 @@ const handleApiError = (error) => {
   
   const customError = new Error(message);
   customError.originalError = error;
+  customError.statusCode = error.response ? error.response.status : null;
   return customError;
 };
 
 // Set token for authenticated requests
 export const setUserAuthToken = (token) => {
-  setAuthToken(token);
+  if (token) {
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete apiClient.defaults.headers.common['Authorization'];
+  }
+  setAuthToken(token); // Also update in auth.js
 };
 
 export default {
@@ -126,4 +161,5 @@ export default {
   uploadImage,
   updateImage,
   deleteImage,
+  setUserAuthToken
 };
