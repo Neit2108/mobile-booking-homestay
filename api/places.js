@@ -12,6 +12,24 @@ const apiClient = axios.create({
   },
 });
 
+// Add request interceptor to include the auth token in every request
+apiClient.interceptors.request.use(
+  async (config) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Error getting auth token from AsyncStorage', error);
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 /**
  * Get top rated places
  * @param {number} limit - Number of places to fetch
@@ -179,14 +197,34 @@ export const getPlaceReviews = async (placeId) => {
  */
 export const postPlaceReview = async (reviewData) => {
   try {
+    // Get token - even though we have the interceptor, let's ensure we have it for debugging
+    const token = await AsyncStorage.getItem('authToken');
+    if (!token) {
+      console.error('No auth token available when posting review');
+      throw new Error('Authentication required. Please log in again.');
+    }
+
+    // Log the form data structure for debugging
+    console.log('Submitting review with token:', token.substring(0, 10) + '...');
+    
+    // Use FormData for multipart/form-data uploads
     const response = await apiClient.post("/comments/add-comment", reviewData, {
       headers: {
         "Content-Type": "multipart/form-data",
+        "Authorization": `Bearer ${token}`
       },
     });
+    
+    console.log('Review submission response:', response.status);
     return response.data;
   } catch (error) {
     console.error("Error posting review:", error);
+    console.error("Error response:", error.response?.data);
+    
+    // Re-throw with clear error message for the user
+    if (error.response?.status === 401) {
+      throw new Error('Authentication required. Please log in again.');
+    }
     throw handleApiError(error);
   }
 };
@@ -259,18 +297,13 @@ export const searchPlaces = async (query, filters = {}) => {
 export const canCommentOnPlace = async (placeId) => {
   try {
     const token = await AsyncStorage.getItem('authToken');
-    console.log(token);
     if (!token) {
       console.log('No authentication token available');
       return { canComment: false, message: "Login required to check comment permission" };
     }
 
     // Make the API call with the token in the Authorization header
-    const response = await apiClient.get(`/bookings/can-comment/${placeId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.get(`/bookings/can-comment/${placeId}`);
     return response.data;
   } catch (error) {
     console.error(`Error checking comment permission for place ${placeId}:`, error);

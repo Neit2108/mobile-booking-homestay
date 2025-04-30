@@ -14,6 +14,7 @@ import AllPlacesScreen from "../screens/places/AllPlacesScreen";
 import PlaceDetailsScreen from "../screens/places/PlaceDetailsScreen";
 import AllReviewsScreen from "../screens/places/AllReviewsScreen";
 import BookingRequestScreen from "../screens/booking/BookingRequestScreen";
+import BookingDetailsScreen from "../screens/booking/BookingDetailsScreen";
 
 // Search screens
 import SearchScreen from "../screens/search/SearchScreen";
@@ -49,6 +50,7 @@ const AppStack = () => {
       <Stack.Screen name="AllPlaces" component={AllPlacesScreen} />
       <Stack.Screen name="PlaceDetails" component={PlaceDetailsScreen} />
       <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
+      <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} options={{ headerShown: false }} />
       <Stack.Screen 
         name="BookingRequest" 
         component={BookingRequestScreen}

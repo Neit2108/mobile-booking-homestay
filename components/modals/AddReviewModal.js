@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,9 @@ import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
 // API
 import { postPlaceReview } from '../../api/places';
 
+//context
+import {useAuth} from '../../context/AuthContext'
+
 const { width } = Dimensions.get('window');
 
 const AddReviewModal = ({ visible, onClose, placeId, rating: initialRating }) => {
@@ -28,6 +31,14 @@ const AddReviewModal = ({ visible, onClose, placeId, rating: initialRating }) =>
   const [selectedImages, setSelectedImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rating, setRating] = useState(initialRating);
+  const {user} = useAuth();
+  
+  // Reset form when modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      setRating(initialRating);
+    }
+  }, [visible, initialRating]);
   
   const handleAddPhoto = async () => {
     try {
@@ -40,9 +51,8 @@ const AddReviewModal = ({ visible, onClose, placeId, rating: initialRating }) =>
       
       // Open image picker
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images', 'videos'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
-        // aspect: [4, 3],
         quality: 0.8,
       });
       
@@ -81,6 +91,7 @@ const AddReviewModal = ({ visible, onClose, placeId, rating: initialRating }) =>
       const formData = new FormData();
       formData.append('content', reviewText);
       formData.append('rating', rating);
+      formData.append('senderId', user.id);
       formData.append('placeId', placeId);
       
       // Add images to form data
@@ -104,14 +115,13 @@ const AddReviewModal = ({ visible, onClose, placeId, rating: initialRating }) =>
         'Your review has been submitted successfully.',
         [{ text: 'OK', onPress: () => {
           // Reset form and close modal
-          setReviewText('');
-          setSelectedImages([]);
+          resetForm();
           onClose(true); // Pass true to indicate successful submission
         }}]
       );
     } catch (error) {
       console.error('Error submitting review:', error);
-      Alert.alert('Error', 'Failed to submit review. Please try again.');
+      Alert.alert('Error', error.message || 'Failed to submit review. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -121,12 +131,26 @@ const AddReviewModal = ({ visible, onClose, placeId, rating: initialRating }) =>
     setRating(newRating);
   };
   
+  // Reset the form state
+  const resetForm = () => {
+    setReviewText('');
+    setSelectedImages([]);
+    setRating(initialRating);
+  };
+  
+  // Handle modal close
+  const handleClose = () => {
+    // Reset form when closing without submitting
+    resetForm();
+    onClose(false); // Pass false to indicate no submission
+  };
+
   return (
     <Modal
       visible={visible}
       animationType="slide"
       transparent={true}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -136,7 +160,7 @@ const AddReviewModal = ({ visible, onClose, placeId, rating: initialRating }) =>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Write a Review</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={COLORS.text.secondary} />
             </TouchableOpacity>
           </View>

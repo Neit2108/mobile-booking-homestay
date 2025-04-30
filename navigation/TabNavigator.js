@@ -6,7 +6,7 @@ import { COLORS } from '../constants/theme';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
-import BookingsScreen from '../screens/bookings/BookingsScreen';
+import BookingsScreen from '../screens/booking/BookingsScreen';
 import MessagesScreen from '../screens/messages/MessagesScreen';
 import ProfileTabNavigator from './ProfileTabNavigator';
 
