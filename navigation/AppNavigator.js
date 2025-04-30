@@ -13,6 +13,7 @@ import TabNavigator from "./TabNavigator";
 import AllPlacesScreen from "../screens/places/AllPlacesScreen";
 import PlaceDetailsScreen from "../screens/places/PlaceDetailsScreen";
 import AllReviewsScreen from "../screens/places/AllReviewsScreen";
+import BookingRequestScreen from "../screens/booking/BookingRequestScreen";
 
 // Search screens
 import SearchScreen from "../screens/search/SearchScreen";
@@ -48,6 +49,14 @@ const AppStack = () => {
       <Stack.Screen name="AllPlaces" component={AllPlacesScreen} />
       <Stack.Screen name="PlaceDetails" component={PlaceDetailsScreen} />
       <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
+      <Stack.Screen 
+        name="BookingRequest" 
+        component={BookingRequestScreen}
+        options={{
+          headerShown: false,
+          animationEnabled: true,
+        }}
+      />
       <Stack.Screen
         name="Search"
         component={SearchScreen}
@@ -81,6 +90,7 @@ const AppStack = () => {
           animationEnabled: true,
         }}
       />
+      
     </Stack.Navigator>
   );
 };

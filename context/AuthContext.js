@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as authAPI from '../api/auth';
+import { getProfile } from '../api/user';
 
 const AuthContext = createContext();
 
@@ -12,52 +13,88 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Initialize auth state when the app loads
   useEffect(() => {
-    // Check if user is logged in
-    const loadStoredToken = async () => {
+    const initializeAuth = async () => {
       try {
         const storedToken = await AsyncStorage.getItem('authToken');
         const storedUser = await AsyncStorage.getItem('user');
         
-        if (storedToken && storedUser) {
-          console.log('Found stored auth token and user data');
+        if (storedToken) {
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
-          // Set auth header for API calls
           authAPI.setAuthToken(storedToken);
-        } else {
-          console.log('No stored auth token found, user needs to login');
+          
+          // If we have stored user data, use it initially
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+          
+          // Then fetch the latest profile data
+          await fetchUserProfile();
         }
-      } catch (e) {
-        console.error('Failed to load auth data from storage', e);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
       } finally {
         setLoading(false);
       }
     };
-
-    loadStoredToken();
+    
+    initializeAuth();
   }, []);
+  
+  // Function to fetch the user's profile
+  const fetchUserProfile = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem('authToken');
+      if (!storedToken) return;
+      
+      const response = await getProfile(storedToken);
+      if (response && response.data) {
+        const profileData = response.data;
+        
+        // Map API response fields to our user object structure
+        const userData = {
+          id: profileData.id,
+          fullName: profileData.name,
+          email: profileData.email,
+          phoneNumber: profileData.phone,
+          homeAddress: profileData.add,
+          birthDate: profileData.birthday,
+          gender: profileData.gender,
+          avatarUrl: profileData.avatar,
+          bio: profileData.bio,
+          identityCard: profileData.identityCard,
+          role: profileData.role,
+        };
+        
+        setUser(userData);
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   const login = async (credentials) => {
     setLoading(true);
     setError(null);
     try {
       const response = await authAPI.login(credentials);
-      const { token, fullName, avatarUrl } = response;
+      const { token } = response;
       
-      const userData = { fullName, avatarUrl };
+      if (token) {
+        // Save token to storage and state
+        await AsyncStorage.setItem('authToken', token);
+        setToken(token);
+        authAPI.setAuthToken(token);
+        
+        // Fetch user profile after successful login
+        await fetchUserProfile();
+      }
       
-      await AsyncStorage.setItem('authToken', token);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-      
-      // Set auth header for future API calls
-      authAPI.setAuthToken(token);
-      
-      setToken(token);
-      setUser(userData);
       return true;
-    } catch (e) {
-      setError(e.message || 'An error occurred during login');
+    } catch (error) {
+      setError(error.message || 'Login failed. Please try again.');
       return false;
     } finally {
       setLoading(false);
@@ -70,8 +107,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.register(userData);
       return true;
-    } catch (e) {
-      setError(e.message || 'An error occurred during registration');
+    } catch (error) {
+      setError(error.message || 'Registration failed. Please try again.');
       return false;
     } finally {
       setLoading(false);
@@ -84,19 +121,29 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('user');
       
-      // Clear auth header
-      authAPI.setAuthToken(null);
-      
       setToken(null);
       setUser(null);
-    } catch (e) {
-      console.error('Error during logout', e);
+      authAPI.setAuthToken(null);
+    } catch (error) {
+      console.error('Error during logout:', error);
     } finally {
       setLoading(false);
     }
   };
+  
+  // Check if user has admin role
+  const isAdmin = () => user?.role?.includes('Admin');
+  
+  // Check if user has landlord role
+  const isLandlord = () => user?.role?.includes('Landlord');
+  
+  // Check if user has a specific role
+  const hasRole = (role) => user?.role === role;
+  
+  // Check if user has any of the specified roles
+  const hasAnyRole = (roles) => roles?.some(role => user?.role?.includes(role));
 
-  // Add this function to update user data
+  // User profile update
   const updateUserData = async (updatedUserData) => {
     try {
       // Update local state
@@ -106,8 +153,8 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('user', JSON.stringify(updatedUserData));
       
       return true;
-    } catch (e) {
-      console.error('Error updating user data', e);
+    } catch (error) {
+      console.error('Error updating user data:', error);
       return false;
     }
   };
@@ -120,8 +167,15 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    updateUserData, // Add the new function to the context value
+    updateUserData,
+    fetchUserProfile,
+    isAdmin,
+    isLandlord,
+    hasRole,
+    hasAnyRole
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+export default { AuthProvider, useAuth };

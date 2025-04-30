@@ -157,8 +157,12 @@ const PlaceDetailsScreen = () => {
   };
   
   const handleBookNow = () => {
-    // Navigate to booking screen
-    navigation.navigate('Booking', { placeId: id });
+    // Navigate to booking request screen with necessary params
+    navigation.navigate('BookingRequest', { 
+      placeId: id,
+      startDate: new Date(), // Default to today
+      endDate: new Date(new Date().setDate(new Date().getDate() + 2)), // Default to 2 days stay
+    });
   };
 
   const handleOpenMap = () => {
@@ -360,7 +364,7 @@ const PlaceDetailsScreen = () => {
               {reviews && reviews.length > 0 ? (
                 <ReviewsSection 
                   placeId={place.id}
-                  reviews={reviews.slice(0, 2)} // Only show first 2 reviews
+                  reviews={reviews.slice(0, 2)} 
                 />
               ) : (
                 <View style={styles.emptyReviewsContainer}>

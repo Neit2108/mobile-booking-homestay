@@ -2,6 +2,7 @@ import axios from "axios";
 import { API_URL } from "../constants/config";
 import { setAuthToken } from "./auth";
 import { formatPrice } from "../utils/formatPrice";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Create axios instance
 const apiClient = axios.create({
@@ -257,13 +258,32 @@ export const searchPlaces = async (query, filters = {}) => {
  */
 export const canCommentOnPlace = async (placeId) => {
   try {
-    const response = await apiClient.get(`/bookings/can-comment/${placeId}`);
+    const token = await AsyncStorage.getItem('authToken');
+    console.log(token);
+    if (!token) {
+      console.log('No authentication token available');
+      return { canComment: false, message: "Login required to check comment permission" };
+    }
+
+    // Make the API call with the token in the Authorization header
+    const response = await apiClient.get(`/bookings/can-comment/${placeId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
-    // console.error(
-    //   `Error checking comment permission for place ${placeId}:`,
-    //   error
-    // );
+    console.error(`Error checking comment permission for place ${placeId}:`, error);
+    
+    if (error.response && error.response.status === 401) {
+      console.log('Authentication error: User not authorized');
+      return { 
+        canComment: false, 
+        message: "Please log in again to check comment permission",
+        authError: true
+      };
+    }
+    
     return { canComment: false, message: "Failed to check comment permission" };
   }
 };
