@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../constants/theme';
+import { getUserData } from '../../utils/UserStorageUtils'; // Import the utility function
 
 /**
  * Reusable Profile Header component with user info and edit button
@@ -11,20 +12,49 @@ import { COLORS, SIZES } from '../../constants/theme';
  * @param {object} style - Additional container style (optional)
  */
 const ProfileHeader = ({ user, onEditPress, style }) => {
+  // Add state to store the latest user data
+  const [currentUser, setCurrentUser] = useState(user);
+  
+  // Check for updated user data when component mounts or becomes visible
+  useEffect(() => {
+    const checkForUpdatedUserData = async () => {
+      try {
+        const userData = await getUserData();
+        if (userData) {
+          // Only update if there's a difference to prevent unnecessary re-renders
+          if (JSON.stringify(userData) !== JSON.stringify(currentUser)) {
+            setCurrentUser(userData);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking for updated user data', error);
+      }
+    };
+    
+    checkForUpdatedUserData();
+    
+    // Optional: Add a listener to check for updates more frequently
+    const intervalId = setInterval(checkForUpdatedUserData, 5000); // Check every 5 seconds
+    
+    return () => {
+      clearInterval(intervalId); // Clean up on unmount
+    };
+  }, []);
+  
   return (
     <View style={[styles.container, style]}>
       <View style={styles.profileInfo}>
         <Image
           source={
-            user?.avatarUrl
-              ? { uri: user.avatarUrl }
+            currentUser?.avatarUrl
+              ? { uri: currentUser.avatarUrl }
               : require('../../assets/images/default-avatar.jpg')
           }
           style={styles.avatar}
         />
         <View style={styles.textContainer}>
-          <Text style={styles.name}>{user?.fullName || 'Guest User'}</Text>
-          <Text style={styles.username}>@{user?.username || 'guest'}</Text>
+          <Text style={styles.name}>{currentUser?.fullName || 'Guest User'}</Text>
+          <Text style={styles.username}>@{currentUser?.username || 'guest'}</Text>
         </View>
       </View>
       

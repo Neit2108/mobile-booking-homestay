@@ -1,5 +1,5 @@
 // API configuration
-export const API_URL = 'https://fe34-171-229-248-178.ngrok-free.app'; 
+export const API_URL = 'https://0ac1-2405-4802-1d0d-3880-ed7f-f0c2-51dc-290a.ngrok-free.app'; 
 
 // App configuration
 export const APP_NAME = 'HomiesStay';

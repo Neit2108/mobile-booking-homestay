@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,13 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Constants
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
 
 /**
- * Simple Custom Date Picker Input component that doesn't rely on native DateTimePicker
+ * Custom Date Picker with proper date selection
  * 
  * @param {string} label - Input label
  * @param {Date} value - Selected date value
@@ -30,7 +31,15 @@ const CustomDatePicker = ({
   error,
   style = {},
 }) => {
-  const [modalVisible, setModalVisible] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(value || new Date());
+  
+  // Update selectedDate if value prop changes
+  useEffect(() => {
+    if (value) {
+      setSelectedDate(value);
+    }
+  }, [value]);
 
   // Format date to display
   const formatDate = (date) => {
@@ -43,78 +52,52 @@ const CustomDatePicker = ({
     return `${day}/${month}/${year}`;
   };
 
-  // Simple picker that uses select lists instead of native date picker
-  const renderSimpleDatePicker = () => {
-    const currentDate = value || new Date();
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const day = currentDate.getDate();
-    
-    // Generate arrays for day, month, year options
-    const days = Array.from({ length: 31 }, (_, i) => i + 1);
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    
-    // Create a 100-year range ending with current year
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
+  // Handle date change from the date picker
+  const handleDateChange = (event, date) => {
+    if (Platform.OS === 'android') {
+      setShowPicker(false);
+      if (event.type === 'set' && date) {
+        setSelectedDate(date);
+        onChange(date);
+      }
+    } else {
+      if (date) {
+        setSelectedDate(date);
+        onChange(date);
+      }
+    }
+    console.log('Selected Date:', selectedDate);
+    console.log('Form Data Birth Date:', formData.birthDate);
 
-    const handleDateChange = (newDay, newMonth, newYear) => {
-      // Create new date (handle month index 0-11)
-      const monthIndex = typeof newMonth === 'number' ? newMonth : months.indexOf(newMonth);
-      const updatedDate = new Date(newYear, monthIndex, newDay);
-      onChange(updatedDate);
-    };
+  };
+  
 
-    return (
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Text style={styles.modalDoneText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.dateSelectionContainer}>
-              {/* Simplified version - just show basic date selection UI */}
-              <Text style={styles.dateSelectionText}>
-                Please select your birth date
-              </Text>
-              
-              <Text style={styles.datePreview}>
-                {formatDate(currentDate)}
-              </Text>
-              
-              <Text style={styles.dateSelectionHelp}>
-                In a full implementation, this would show day/month/year pickers.
-              </Text>
-              
-              <TouchableOpacity 
-                style={styles.todayButton}
-                onPress={() => {
-                  // Set date to today as a simple example
-                  onChange(new Date());
-                  setModalVisible(false);
-                }}
-              >
-                <Text style={styles.todayButtonText}>Use Today's Date</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    );
+  // Open the date picker
+  const openDatePicker = () => {
+    setShowPicker(true);
+  };
+  
+  // Close the iOS modal and apply selected date
+  const handleConfirm = () => {
+    setShowPicker(false);
+    onChange(selectedDate);
+  };
+  
+  // Cancel selection on iOS
+  const handleCancel = () => {
+    setShowPicker(false);
+  };
+
+  // Set date to 18 years ago - common for adult selection
+  const selectEighteenYearsAgo = () => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 18);
+    setSelectedDate(date);
+    onChange(date);
+    
+    if (Platform.OS === 'android') {
+      setShowPicker(false);
+    }
   };
 
   return (
@@ -126,7 +109,7 @@ const CustomDatePicker = ({
           styles.inputContainer,
           error && styles.inputContainerError,
         ]}
-        onPress={() => setModalVisible(true)}
+        onPress={openDatePicker}
         activeOpacity={0.7}
       >
         <Text
@@ -147,8 +130,58 @@ const CustomDatePicker = ({
       
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      {/* Date Picker Modal */}
-      {renderSimpleDatePicker()}
+      {/* iOS date picker modal */}
+      {Platform.OS === 'ios' && showPicker && (
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showPicker}
+          onRequestClose={handleCancel}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={handleCancel}>
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Select Date</Text>
+                <TouchableOpacity onPress={handleConfirm}>
+                  <Text style={styles.modalDoneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.pickerContainer}>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  style={styles.datePicker}
+                />
+                
+                <TouchableOpacity 
+                  style={styles.quickOptionButton}
+                  onPress={selectEighteenYearsAgo}
+                >
+                  <Text style={styles.quickOptionText}>Set to 18 Years Ago</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+      
+      {/* Android date picker */}
+      {Platform.OS === 'android' && showPicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          maximumDate={new Date()}
+        />
+      )}
     </View>
   );
 };
@@ -171,7 +204,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SIZES.padding.medium,
-    height: SIZES.input.height,
+    height: 50,
     borderWidth: 1,
     borderColor: 'transparent',
   },
@@ -202,14 +235,19 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 30,
-    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
   },
   modalCancelText: {
     color: COLORS.text.secondary,
@@ -220,38 +258,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  dateSelectionContainer: {
-    padding: 20,
+  pickerContainer: {
     alignItems: 'center',
+    padding: 20,
   },
-  dateSelectionText: {
-    fontSize: 18,
-    color: COLORS.text.primary,
-    fontWeight: '500',
-    marginBottom: 20,
+  datePicker: {
+    width: '100%',
+    height: 200,
   },
-  datePreview: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.primary,
-    marginBottom: 20,
-  },
-  dateSelectionHelp: {
-    fontSize: 14,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  todayButton: {
+  quickOptionButton: {
+    marginTop: 15,
+    padding: 10,
     backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
     borderRadius: 8,
   },
-  todayButtonText: {
+  quickOptionText: {
     color: 'white',
-    fontWeight: 'bold',
-  }
+    fontWeight: '500',
+  },
 });
 
 export default CustomDatePicker;

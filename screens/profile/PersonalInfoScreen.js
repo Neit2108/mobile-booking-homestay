@@ -93,15 +93,40 @@ const PersonalInfoScreen = ({ route }) => {
         // Update form data with the latest profile information
         const userData = response.data;
         
+        // Handle gender value from API - it could be:
+        // 1. A string like "Nam", "Nữ", "Khác"
+        // 2. A number like 0, 1, 2 (enum values)
+        // 3. Possibly null or undefined
+        let userGender = userData.gender;
+        
+        // Log the raw gender value from API
+        console.log('Raw gender from API:', userGender);
+        
+        // If gender is a number, convert to the Vietnamese string
+        if (userGender !== undefined && userGender !== null) {
+          if (!isNaN(userGender)) {
+            const genderIndex = parseInt(userGender, 10);
+            if (genderIndex === 0) userGender = 'Nam';
+            else if (genderIndex === 1) userGender = 'Nữ';
+            else if (genderIndex === 2) userGender = 'Khác';
+          }
+        } else {
+          // Default to "Nam" if no gender is provided
+          userGender = 'Nam';
+        }
+        
         const updatedFormData = {
           fullName: userData.name || '',
           identityCard: userData.identityCard || '',
-          gender: userData.gender || 'Male',
+          gender: userGender, // Use the processed gender value
           birthDate: userData.birthday ? new Date(userData.birthday) : null,
           email: userData.email || '',
           phoneNumber: userData.phone || '',
           homeAddress: userData.add || '',
         };
+        
+        // Log the final gender being set in the form
+        console.log('Setting gender in form to:', userGender);
         
         setFormData(updatedFormData);
         
@@ -114,16 +139,7 @@ const PersonalInfoScreen = ({ route }) => {
     } catch (error) {
       console.error('Error fetching user profile:', error);
       
-      // Handle 401 errors specifically
-      if (error.statusCode === 401) {
-        Alert.alert(
-          'Session Expired', 
-          'Your login session has expired. Please log in again.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-        );
-      } else {
-        Alert.alert('Error', 'Failed to load user profile information');
-      }
+      // Handle errors...
     } finally {
       setIsLoadingProfile(false);
     }
@@ -205,37 +221,20 @@ const PersonalInfoScreen = ({ route }) => {
       const profileData = {
         fullName: formData.fullName,
         identityCard: formData.identityCard,
-        gender: formData.gender,
+        gender: formData.gender, // This should already be in the correct format (Nam, Nữ, Khác)
         birthDate: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
         homeAddress: formData.homeAddress,
       };
       
+      // Log the gender being sent to the API for debugging
+      console.log('Sending gender to API:', profileData.gender);
+      
       // Call API to update profile
       const response = await updateProfile(profileData);
       
-      if (response && response.data) {
-        // Update user data in context
-        updateUserData({
-          ...user,
-          fullName: response.data.name,
-          email: response.data.email,
-          phoneNumber: response.data.phone,
-          homeAddress: response.data.add,
-          birthDate: response.data.birthday,
-          gender: response.data.gender,
-          identityCard: response.data.identityCard,
-          avatarUrl: response.data.avatar,
-        });
-        
-        // Update initial form data to reflect saved state
-        setInitialFormData({...formData});
-        setHasChanges(false);
-        
-        Alert.alert('Success', 'Profile updated successfully');
-        navigation.goBack();
-      }
+      // ... rest of your code
     } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert('Error', error.message || 'Failed to update profile');
@@ -344,13 +343,20 @@ const PersonalInfoScreen = ({ route }) => {
       if (response && response.avatarUrl) {
         setAvatar(response.avatarUrl);
         
-        // Update user data in context
-        updateUserData({
+        // Create a new user object with the updated avatar URL
+        const updatedUserData = {
           ...user,
           avatarUrl: response.avatarUrl
-        });
+        };
         
-        Alert.alert('Success', 'Profile photo updated successfully');
+        // Update user data in context using the updateUserData function
+        if (updateUserData) {
+          await updateUserData(updatedUserData);
+          Alert.alert('Success', 'Profile photo updated successfully');
+        } else {
+          console.error('updateUserData function is not available in the Auth Context');
+          Alert.alert('Warning', 'Photo updated but may require restart to show in all screens');
+        }
       }
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -370,13 +376,20 @@ const PersonalInfoScreen = ({ route }) => {
       if (response && response.message) {
         setAvatar(null);
         
-        // Update user data in context
-        updateUserData({
+        // Create a new user object with null avatarUrl
+        const updatedUserData = {
           ...user,
           avatarUrl: null
-        });
+        };
         
-        Alert.alert('Success', 'Profile photo deleted successfully');
+        // Update user data in context using the updateUserData function
+        if (updateUserData) {
+          await updateUserData(updatedUserData);
+          Alert.alert('Success', 'Profile photo deleted successfully');
+        } else {
+          console.error('updateUserData function is not available in the Auth Context');
+          Alert.alert('Warning', 'Photo deleted but may require restart to show in all screens');
+        }
       }
     } catch (error) {
       console.error('Error deleting image:', error);

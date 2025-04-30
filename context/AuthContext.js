@@ -96,6 +96,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Add this function to update user data
+  const updateUserData = async (updatedUserData) => {
+    try {
+      // Update local state
+      setUser(updatedUserData);
+      
+      // Update AsyncStorage
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUserData));
+      
+      return true;
+    } catch (e) {
+      console.error('Error updating user data', e);
+      return false;
+    }
+  };
+
   const value = {
     user,
     token,
@@ -104,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUserData, // Add the new function to the context value
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
