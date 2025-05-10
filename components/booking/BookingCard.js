@@ -138,7 +138,7 @@ const BookingCard = ({ booking, onPress, style }) => {
           <Text style={styles.price}>
             ${formatPrice((booking.TotalPrice || booking.totalPrice || 0) / calculateNights())}
           </Text>
-          <Text style={styles.priceUnit}>/night</Text>
+          <Text style={styles.priceUnit}>/ngày</Text>
         </View>
         
         {/* Dates and Guests Info */}
@@ -156,7 +156,7 @@ const BookingCard = ({ booking, onPress, style }) => {
           <View style={styles.detailItem}>
             <Ionicons name="person-outline" size={14} color={COLORS.text.secondary} />
             <Text style={styles.detailText}>
-              {booking.NumberOfGuests || booking.numberOfGuests || booking.guests || 1} {(booking.NumberOfGuests || booking.numberOfGuests || booking.guests || 1) === 1 ? 'Guest' : 'Guests'} ({calculateNights()} {calculateNights() === 1 ? 'Room' : 'Rooms'})
+              {booking.NumberOfGuests || booking.numberOfGuests || booking.guests || 1} {(booking.NumberOfGuests || booking.numberOfGuests || booking.guests || 1) === 1 ? "Khách" : "Khách"}
             </Text>
           </View>
         </View>

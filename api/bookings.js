@@ -121,7 +121,7 @@ export const getUserBookings = async (userId = null) => {
       // Try to map the response to our expected format
       return response.data.map(booking => {
         // Log original booking to see its structure
-        console.log('Original booking:', JSON.stringify(booking, null, 2));
+        // console.log('Original booking:', JSON.stringify(booking, null, 2));
         
         // Create standardized booking object with all possible property names
         return {
@@ -181,6 +181,7 @@ export const getBookingDetails = async (bookingId) => {
 export const createBooking = async (bookingData) => {
   try {
     const response = await apiClient.post('/bookings/new-booking', bookingData);
+    console.log(bookingData);
     return response.data;
   } catch (error) {
     console.error('Error creating booking:', error);

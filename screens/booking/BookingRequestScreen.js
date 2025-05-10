@@ -98,9 +98,8 @@ const BookingRequestScreen = () => {
     };
     
     // Calculate number of nights
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const nights = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+    const diffTime = Math.abs(endDate - startDate);
+    const nights = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))) + 1;
     
     // Calculate base total (price per night * nights)
     const nightlyRate = place.price || 0;
@@ -122,7 +121,7 @@ const BookingRequestScreen = () => {
     const serviceFee = 5;
     
     // Calculate total
-    const total = subtotal + surcharge - discount + cleaningFee + serviceFee;
+    const total = subtotal + surcharge - discount;
     
     return {
       nightlyRate,
@@ -230,7 +229,6 @@ const BookingRequestScreen = () => {
       };
       
       const response = await bookingAPI.createBooking(bookingData);
-      
       Alert.alert(
         'Booking Successful',
         'Your booking request has been submitted and is awaiting confirmation.',
@@ -269,7 +267,7 @@ const BookingRequestScreen = () => {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading booking details...</Text>
+        <Text style={styles.loadingText}>Chờ...</Text>
       </SafeAreaView>
     );
   }
@@ -281,7 +279,7 @@ const BookingRequestScreen = () => {
         <TouchableOpacity onPress={handleGoBack} style={styles.headerButton}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Request to book</Text>
+        <Text style={styles.headerTitle}>Yêu cầu thuê phòng</Text>
         <TouchableOpacity style={styles.headerButton}>
           <Ionicons name="ellipsis-vertical" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
@@ -290,11 +288,11 @@ const BookingRequestScreen = () => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Date Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Date</Text>
+          <Text style={styles.sectionTitle}>Ngày đến - Ngày đi</Text>
           <View style={styles.dateContainer}>
             {/* Check-in Date */}
             <BookingDatePicker
-              label="Check-In"
+              label="Ngày đến"
               date={startDate}
               onDateChange={handleStartDateChange}
               minDate={new Date()}
@@ -304,7 +302,7 @@ const BookingRequestScreen = () => {
             
             {/* Check-out Date */}
             <BookingDatePicker
-              label="Check-Out"
+              label="Ngày đi"
               date={endDate}
               onDateChange={setEndDate}
               minDate={new Date(startDate.getTime() + 86400000)} // startDate + 1 day
@@ -316,7 +314,7 @@ const BookingRequestScreen = () => {
         
         {/* Guest Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Guest</Text>
+          <Text style={styles.sectionTitle}>Số khách</Text>
           <View style={styles.guestContainer}>
             <TouchableOpacity 
               style={[
@@ -346,38 +344,38 @@ const BookingRequestScreen = () => {
           {/* Display maximum guests allowed */}
           {place && (
             <Text style={styles.maxGuestsInfo}>
-              Maximum {maxGuests} guests allowed
+              Tối đa {maxGuests} khách
             </Text>
           )}
           
           {/* Display surcharge notice */}
           {guestCount >= 3 && (
             <Text style={styles.surchargeNote}>
-              We increase 30% for 3 guests or more.
+              Chúng tôi thu thêm 30% phí nếu có 3 khách trở lên.
             </Text>
           )}
         </View>
         
         {/* Voucher Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Voucher</Text>
+          <Text style={styles.sectionTitle}>Mã giảm giá</Text>
           
           {appliedVoucher ? (
             <View style={styles.appliedVoucherContainer}>
               <View style={styles.appliedVoucherInfo}>
                 <Text style={styles.appliedVoucherCode}>{appliedVoucher.code}</Text>
                 <Text style={styles.appliedVoucherDiscount}>
-                  {appliedVoucher.discount}% discount applied
+                  Bạn được giảm {appliedVoucher.discount}%
                 </Text>
               </View>
               <TouchableOpacity style={styles.removeVoucherButton} onPress={removeVoucher}>
-                <Text style={styles.removeVoucherText}>Remove</Text>
+                <Text style={styles.removeVoucherText}>Xóa</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.voucherInputContainer}>
               <CustomInput
-                placeholder="Enter voucher code"
+                placeholder="Nhập mã giảm giá"
                 value={voucherCode}
                 onChangeText={setVoucherCode}
                 error={voucherError}
@@ -391,7 +389,7 @@ const BookingRequestScreen = () => {
                 {isValidatingVoucher ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <Text style={styles.checkButtonText}>Check</Text>
+                  <Text style={styles.checkButtonText}>Kiểm tra</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -400,23 +398,23 @@ const BookingRequestScreen = () => {
         
         {/* Payment Details Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Details</Text>
+          <Text style={styles.sectionTitle}>Thông tin thanh toán</Text>
           <View style={styles.paymentDetails}>
             {/* Base price */}
             <View style={styles.paymentRow}>
               <Text style={styles.paymentLabel}>
-                Total: {priceDetails.totalNights} Night{priceDetails.totalNights !== 1 ? 's' : ''}
+                Tổng: {priceDetails.totalNights} ngày
               </Text>
-              <Text style={styles.paymentValue}>${formatPrice(priceDetails.subtotal)}</Text>
+              <Text style={styles.paymentValue}>{formatPrice(priceDetails.subtotal)} VND</Text>
             </View>
             
             {/* Surcharge for 3+ guests */}
             {guestCount >= 3 && priceDetails.surcharge > 0 && (
               <View style={styles.paymentRow}>
                 <Text style={styles.surchargeLabel}>
-                  Surcharge (30% for {guestCount} guests)
+                  Phụ phí (30% với {guestCount} khách)
                 </Text>
-                <Text style={styles.surchargeValue}>${formatPrice(priceDetails.surcharge)}</Text>
+                <Text style={styles.surchargeValue}>{formatPrice(priceDetails.surcharge)} VND</Text>
               </View>
             )}
             
@@ -424,14 +422,14 @@ const BookingRequestScreen = () => {
             {appliedVoucher && priceDetails.discount > 0 && (
               <View style={styles.paymentRow}>
                 <Text style={styles.discountLabel}>
-                  Discount ({appliedVoucher.discount}%)
+                  Giảm giá ({appliedVoucher.discount}%)
                 </Text>
-                <Text style={styles.discountValue}>-${formatPrice(priceDetails.discount)}</Text>
+                <Text style={styles.discountValue}>-{formatPrice(priceDetails.discount)} VND</Text>
               </View>
             )}
             
             {/* Fees */}
-            <View style={styles.paymentRow}>
+            {/* <View style={styles.paymentRow}>
               <Text style={styles.paymentLabel}>Cleaning Fee</Text>
               <Text style={styles.paymentValue}>${formatPrice(priceDetails.cleaningFee)}</Text>
             </View>
@@ -439,12 +437,12 @@ const BookingRequestScreen = () => {
             <View style={styles.paymentRow}>
               <Text style={styles.paymentLabel}>Service Fee</Text>
               <Text style={styles.paymentValue}>${formatPrice(priceDetails.serviceFee)}</Text>
-            </View>
+            </View> */}
             
             {/* Total */}
             <View style={[styles.paymentRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Total Payment:</Text>
-              <Text style={styles.totalValue}>${formatPrice(priceDetails.total)}</Text>
+              <Text style={styles.totalLabel}>Tổng tiền:</Text>
+              <Text style={styles.totalValue}>{formatPrice(priceDetails.total)} VND</Text>
             </View>
           </View>
         </View>
@@ -453,7 +451,7 @@ const BookingRequestScreen = () => {
       {/* Footer with Checkout Button */}
       <View style={styles.footer}>
         <CustomButton
-          title="Checkout"
+          title="Xác nhận"
           onPress={handleCheckout}
           disabled={isSubmitting}
           loading={isSubmitting}

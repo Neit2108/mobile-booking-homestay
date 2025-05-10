@@ -44,7 +44,7 @@ const TabNavigator = () => {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
-          tabBarLabel: 'Home',
+          tabBarLabel: 'Trang chủ',
         }}
       />
       
@@ -55,7 +55,7 @@ const TabNavigator = () => {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
-          tabBarLabel: 'My Booking',
+          tabBarLabel: 'Đơn đặt',
         }}
       />
       
@@ -66,18 +66,18 @@ const TabNavigator = () => {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
           ),
-          tabBarLabel: 'Message',
+          tabBarLabel: 'Tin nhắn',
         }}
       />
       
       <Tab.Screen 
-        name="Profile" 
+        name="Settings" 
         component={ProfileTabNavigator} 
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <Ionicons name="settings-outline" size={size} color={color} />
           ),
-          tabBarLabel: 'Profile',
+          tabBarLabel: 'Cài đặt',
         }}
       />
     </Tab.Navigator>

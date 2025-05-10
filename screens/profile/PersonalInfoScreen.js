@@ -432,14 +432,14 @@ const PersonalInfoScreen = ({ route }) => {
           <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Personal Info</Text>
+          <Text style={styles.headerTitle}>Thông tin cá nhân</Text>
           <View style={styles.placeholderRight} />
         </View>
         
         {isLoadingProfile ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>Loading profile...</Text>
+            <Text style={styles.loadingText}>Chờ...</Text>
           </View>
         ) : (
           <ScrollView 
@@ -468,9 +468,9 @@ const PersonalInfoScreen = ({ route }) => {
                       <Ionicons name="person" size={40} color={COLORS.text.secondary} />
                     </View>
                   )}
-                  <View style={styles.editAvatarButton}>
+                  {/* <View style={styles.editAvatarButton}>
                     <Ionicons name="camera" size={16} color="white" />
-                  </View>
+                  </View> */}
                 </>
               )}
             </TouchableOpacity>
@@ -478,8 +478,8 @@ const PersonalInfoScreen = ({ route }) => {
             {/* Form */}
             <View style={styles.formContainer}>
               <CustomInput
-                label="Full Name"
-                placeholder="Enter your full name"
+                label="Họ và tên"
+                placeholder="Nhập họ và tên"
                 value={formData.fullName}
                 onChangeText={(text) => handleInputChange('fullName', text)}
                 error={errors.fullName}
@@ -487,7 +487,7 @@ const PersonalInfoScreen = ({ route }) => {
               />
               
               <CustomInput
-                label="Identity Card"
+                label="Căn cước công dân"
                 placeholder="Enter your identity card number"
                 value={formData.identityCard}
                 onChangeText={(text) => handleInputChange('identityCard', text)}
@@ -496,17 +496,17 @@ const PersonalInfoScreen = ({ route }) => {
               />
               
               <GenderSelector
-                label="Gender"
+                label="Giới tính"
                 value={formData.gender}
                 onChange={(gender) => handleInputChange('gender', gender)}
                 error={errors.gender}
               />
               
               <CustomDatePicker
-                label="Birth Date"
+                label="Ngày sinh"
                 value={formData.birthDate}
                 onChange={(date) => handleInputChange('birthDate', date)}
-                placeholder="Select your birth date"
+                placeholder="Chọn..."
                 error={errors.birthDate}
               />
               
@@ -521,7 +521,7 @@ const PersonalInfoScreen = ({ route }) => {
               />
               
               <CustomInput
-                label="Phone"
+                label="Số điện thoại"
                 placeholder="Enter your phone number"
                 value={formData.phoneNumber}
                 onChangeText={(text) => handleInputChange('phoneNumber', text)}
@@ -530,7 +530,7 @@ const PersonalInfoScreen = ({ route }) => {
               />
               
               <CustomInput
-                label="Address"
+                label="Địa chỉ"
                 placeholder="Enter your address"
                 value={formData.homeAddress}
                 onChangeText={(text) => handleInputChange('homeAddress', text)}
@@ -543,7 +543,7 @@ const PersonalInfoScreen = ({ route }) => {
               
               {/* Save Button */}
               <CustomButton
-                title="Save Changes"
+                title="Lưu thông tin"
                 onPress={handleSaveChanges}
                 disabled={!hasChanges || isLoading}
                 loading={isLoading}

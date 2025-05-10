@@ -6,20 +6,53 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from './context/AuthContext';
 import AppNavigator from './navigation/AppNavigator';
 import { COLORS } from './constants/theme';
+import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import linking from './linking';
 
 export default function App() {
-  // Clear auth token on initial load for development purposes
-  // Remove this in production
+  const handleDeepLink = ({ url }) => {
+    if (url.startsWith('HomiesStay://payment-result')) {
+      // Parse URL parameters
+      const urlParams = url.split('?')[1];
+      if (urlParams) {
+        const params = {};
+        urlParams.split('&').forEach(param => {
+          const [key, value] = param.split('=');
+          params[key] = decodeURIComponent(value);
+        });
+        
+        // Navigate to payment result screen
+        if (navigationRef.current) {
+          navigationRef.current.navigate('PaymentResult', params);
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     const clearAuthForDevelopment = async () => {
-      // You can comment this out to persist login sessions during development
-      // await AsyncStorage.removeItem('authToken');
-      // await AsyncStorage.removeItem('user');
       console.log('App initialized');
     };
     
     clearAuthForDevelopment();
+
+    Linking.addEventListener('url', handleDeepLink);
+    
+    // Check for initial deep link
+    Linking.getInitialURL().then(url => {
+      if (url) {
+        handleDeepLink({ url });
+      }
+    });
+    
+    // Cleanup
+    return () => {
+      // Remove event listener (different syntax based on React Native version)
+      if (Linking.removeEventListener) {
+        Linking.removeEventListener('url', handleDeepLink);
+      }
+    };
   }, []);
 
   return (
@@ -27,7 +60,7 @@ export default function App() {
       <SafeAreaProvider>
         <StatusBar style="dark" backgroundColor={COLORS.background.primary} />
         <AuthProvider>
-          <NavigationContainer>
+          <NavigationContainer linking={linking}>
             <AppNavigator />
           </NavigationContainer>
         </AuthProvider>

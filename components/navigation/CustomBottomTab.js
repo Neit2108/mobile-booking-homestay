@@ -29,8 +29,8 @@ const CustomBottomTab = ({ state, descriptors, navigation }) => {
       case 'Messages':
         iconName = isFocused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline';
         break;
-      case 'Profile':
-        iconName = isFocused ? 'person' : 'person-outline';
+      case 'Settings':
+        iconName = isFocused ? 'settings' : 'settings-outline';
         break;
       default:
         iconName = 'square-outline';

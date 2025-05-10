@@ -52,19 +52,10 @@ const BookingsScreen = () => {
       
       // Pass the user ID directly if available
       const userId = user?.id || user?.userId || user?._id;
-      console.log('Fetching bookings with userId:', userId);
-      console.log('User object:', JSON.stringify(user, null, 2));
       
       const bookingsData = await getUserBookings(userId);
-      console.log('Bookings data received:', bookingsData ? bookingsData.length : 'none');
       
       if (bookingsData && Array.isArray(bookingsData)) {
-        if (bookingsData.length > 0) {
-          console.log('First booking sample:', JSON.stringify(bookingsData[0], null, 2));
-        } else {
-          console.log('No bookings found in response');
-        }
-        
         setBookings(bookingsData);
         filterBookings(bookingsData, searchQuery, activeTab);
       } else {
@@ -183,7 +174,7 @@ const BookingsScreen = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Booking</Text>
+        <Text style={styles.headerTitle}>Đơn đặt</Text>
         <TouchableOpacity style={styles.headerButton}>
           <Ionicons name="ellipsis-vertical" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
@@ -191,7 +182,7 @@ const BookingsScreen = () => {
       
       {/* Search input */}
       <SearchInput
-        placeholder="Search..."
+        placeholder="Tìm kiếm..."
         value={searchQuery}
         onChangeText={handleSearch}
         style={styles.searchInput}
@@ -216,7 +207,7 @@ const BookingsScreen = () => {
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchBookings}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       )}

@@ -15,7 +15,7 @@ import PlaceDetailsScreen from "../screens/places/PlaceDetailsScreen";
 import AllReviewsScreen from "../screens/places/AllReviewsScreen";
 import BookingRequestScreen from "../screens/booking/BookingRequestScreen";
 import BookingDetailsScreen from "../screens/booking/BookingDetailsScreen";
-
+import PaymentResultScreen from "../screens/booking/PaymentResultScreen"
 // Search screens
 import SearchScreen from "../screens/search/SearchScreen";
 import SearchResultsScreen from "../screens/search/SearchResultsScreen";
@@ -47,12 +47,17 @@ const AppStack = () => {
       }}
     >
       <Stack.Screen name="TabNavigator" component={TabNavigator} />
+      {console.log("reload")}
       <Stack.Screen name="AllPlaces" component={AllPlacesScreen} />
       <Stack.Screen name="PlaceDetails" component={PlaceDetailsScreen} />
       <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
-      <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} options={{ headerShown: false }} />
-      <Stack.Screen 
-        name="BookingRequest" 
+      <Stack.Screen
+        name="BookingDetails"
+        component={BookingDetailsScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="BookingRequest"
         component={BookingRequestScreen}
         options={{
           headerShown: false,
@@ -92,7 +97,14 @@ const AppStack = () => {
           animationEnabled: true,
         }}
       />
-      
+      <Stack.Screen
+        name="PaymentResult"
+        component={PaymentResultScreen}
+        options={{
+          headerShown: false,
+          animationEnabled: true,
+        }}
+      />
     </Stack.Navigator>
   );
 };

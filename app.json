@@ -7,6 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "homiesstay",
+    "deepLinks": [
+  "homiesstay://payment-result"
+],
+    "platforms": ["ios", "android"],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,12 +21,33 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.homiesstayapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": ["INTERNET"]
     },
+    "intentFilters": [
+      {
+        "action": "VIEW",
+        "autoVerify": true,
+        "data": {
+          "scheme": "homiesstay"
+        },
+        "category": ["BROWSABLE", "DEFAULT"]
+      },
+      {
+        "action": "VIEW",
+        "autoVerify": true,
+        "data": {
+          "scheme": "https",
+          "host": "homiesStay.com",
+          "pathPrefix": "/"
+        },
+        "category": ["BROWSABLE", "DEFAULT"]
+      }
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     }

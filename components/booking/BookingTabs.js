@@ -13,8 +13,8 @@ import { COLORS, SIZES, FONTS } from '../../constants/theme';
  */
 const BookingTabs = ({ activeTab, onChangeTab, style }) => {
   const tabs = [
-    { id: 'Booked', label: 'Booked' },
-    { id: 'History', label: 'History' },
+    { id: 'Booked', label: 'Đã đặt' },
+    { id: 'History', label: 'Lịch sử' },
   ];
 
   return (
