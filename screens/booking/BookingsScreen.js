@@ -158,13 +158,13 @@ const BookingsScreen = () => {
     return (
       <EmptyState
         icon="calendar-outline"
-        title="No bookings found"
+        title="Không tìm thấy"
         message={
           searchQuery 
-            ? "We couldn't find any bookings matching your search" 
+            ? "Không tìm thấy đơn đặt nào với từ khóa này" 
             : activeTab === 'Booked' 
-              ? "You don't have any active bookings" 
-              : "You don't have any booking history yet"
+              ? "Bạn chưa có đơn đặt nào" 
+              : "Bạn chưa có lịch sử đặt nào"
         }
       />
     );

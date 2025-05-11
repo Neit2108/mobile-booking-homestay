@@ -41,10 +41,10 @@ const RecommendedSection = ({ data = [], loading = false, onSeeAll, onPlacePress
       {/* Only show header if header props provided */}
       {onSeeAll && (
         <View style={styles.header}>
-          <Text style={styles.title}>Gợi ý cho bạn</Text>
-          <TouchableOpacity onPress={onSeeAll} testID="see-all-recommended">
+          {/* <Text style={styles.title}>Gợi ý cho bạn</Text> */}
+          {/* <TouchableOpacity onPress={onSeeAll} testID="see-all-recommended">
             <Text style={styles.seeAll}>Tất cả</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       )}
       

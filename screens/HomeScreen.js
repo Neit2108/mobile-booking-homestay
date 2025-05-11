@@ -79,7 +79,7 @@ const HomeScreen = () => {
   const handleSeeAllPopular = () => {
     console.log('See All Popular clicked');
     navigation.navigate('AllPlaces', { 
-      title: 'Most Popular', 
+      title: 'Nổi tiếng', 
       data: places,
       sourceType: 'popular'
     });
@@ -88,7 +88,7 @@ const HomeScreen = () => {
   const handleSeeAllRecommended = () => {
     console.log('See All Recommended clicked');
     navigation.navigate('AllPlaces', { 
-      title: 'Recommended For You', 
+      title: 'Gợi ý cho bạn', 
       data: places,
       sourceType: 'recommended'
     });
@@ -97,7 +97,7 @@ const HomeScreen = () => {
   const handleSeeAllBestToday = () => {
     console.log('See All Best Today clicked');
     navigation.navigate('AllPlaces', { 
-      title: 'Best Today', 
+      title: 'Lựa chọn hôm nay', 
       data: places,
       sourceType: 'bestToday'
     });
@@ -123,7 +123,7 @@ const HomeScreen = () => {
       
       <Header 
         name={user?.fullName || 'Guest'}
-        location={user?.location || 'San Diego, CA'}
+        location={user?.homeAddress || 'San Diego, CA'}
         avatar={user?.avatarUrl}
         onSearchPress={navigateToSearch}
         onNotificationPress={navigateToNotifications}

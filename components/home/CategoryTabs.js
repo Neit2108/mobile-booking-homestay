@@ -34,6 +34,7 @@ const CategoryTabs = ({ categories = [], selectedCategory, onSelectCategory }) =
         const isSelected = category === selectedCategory;
         
         return (
+          
           <TouchableOpacity
             key={category}
             style={[

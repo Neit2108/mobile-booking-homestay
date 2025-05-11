@@ -22,6 +22,7 @@ import SearchResultsScreen from "../screens/search/SearchResultsScreen";
 import RecentlyViewedScreen from "../screens/search/RecentlyViewedScreen";
 
 import PersonalInfoScreen from "../screens/profile/PersonalInfoScreen";
+import WalletScreen from "../screens/wallet/WalletScreen";
 
 const Stack = createStackNavigator();
 
@@ -51,6 +52,7 @@ const AppStack = () => {
       <Stack.Screen name="AllPlaces" component={AllPlacesScreen} />
       <Stack.Screen name="PlaceDetails" component={PlaceDetailsScreen} />
       <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
+      <Stack.Screen name="Wallet" component={WalletScreen} />
       <Stack.Screen
         name="BookingDetails"
         component={BookingDetailsScreen}

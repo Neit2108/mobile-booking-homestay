@@ -39,12 +39,19 @@ const AllPlacesScreen = () => {
     rating: 0,
   });
 
+  // Phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
+
   // Fetch places based on the source type if no initial data
   useEffect(() => {
     if (!initialData || initialData.length === 0) {
       fetchPlacesByType();
     } else {
       setFilteredPlaces(initialData);
+      // Tính tổng số trang khi có dữ liệu ban đầu
+      setTotalPages(Math.ceil(initialData.length / itemsPerPage));
     }
   }, [initialData, sourceType]);
 
@@ -74,6 +81,9 @@ const AllPlacesScreen = () => {
       
       setPlaces(data);
       setFilteredPlaces(data);
+      
+      // Tính tổng số trang
+      setTotalPages(Math.ceil(data.length / itemsPerPage));
     } catch (error) {
       console.error('Error fetching places:', error);
     } finally {
@@ -100,6 +110,9 @@ const AllPlacesScreen = () => {
     );
     
     setFilteredPlaces(filtered);
+    // Reset về trang 1 và tính lại tổng số trang
+    setCurrentPage(1);
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
   };
 
   // Apply price and rating filters
@@ -134,6 +147,9 @@ const AllPlacesScreen = () => {
     }
     
     setFilteredPlaces(filtered);
+    // Reset về trang 1 và tính lại tổng số trang
+    setCurrentPage(1);
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
   };
 
   // Handle filter application
@@ -155,6 +171,26 @@ const AllPlacesScreen = () => {
     applyFilters(searchResults, newFilters);
     
     setFilterModalVisible(false);
+  };
+
+  // Lấy dữ liệu theo trang hiện tại
+  const getCurrentPageData = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredPlaces.slice(startIndex, endIndex);
+  };
+
+  // Điều hướng trang
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   const handlePlacePress = (place) => {
@@ -184,7 +220,7 @@ const AllPlacesScreen = () => {
           <Ionicons name="search" size={20} color={COLORS.text.secondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search places"
+            placeholder="Tìm kiếm địa điểm..."
             value={searchQuery}
             onChangeText={handleSearch}
             placeholderTextColor={COLORS.text.placeholder}
@@ -202,7 +238,7 @@ const AllPlacesScreen = () => {
       {/* Results counter */}
       <View style={styles.resultsCountContainer}>
         <Text style={styles.resultsCount}>
-          {filteredPlaces.length} {filteredPlaces.length === 1 ? 'result' : 'results'} found
+          {filteredPlaces.length} kết quả được tìm thấy
         </Text>
       </View>
       
@@ -212,26 +248,67 @@ const AllPlacesScreen = () => {
           <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
       ) : (
-        <FlatList
-          data={filteredPlaces}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <PlaceCard
-              item={item}
-              variant="horizontal"
-              onPress={() => handlePlacePress(item)}
-              style={styles.placeCard}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="search-outline" size={50} color={COLORS.text.secondary} />
-              <Text style={styles.emptyText}>No places found</Text>
-              <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
+        <>
+          <FlatList
+            data={getCurrentPageData()}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <PlaceCard
+                item={item}
+                variant="horizontal"
+                onPress={() => handlePlacePress(item)}
+                style={styles.placeCard}
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="search-outline" size={50} color={COLORS.text.secondary} />
+                <Text style={styles.emptyText}>No places found</Text>
+                <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
+              </View>
+            }
+          />
+          
+          {/* Pagination Controls */}
+          {filteredPlaces.length > 0 && (
+            <View style={styles.paginationContainer}>
+              <TouchableOpacity 
+                style={[
+                  styles.paginationButton, 
+                  currentPage === 1 && styles.paginationButtonDisabled
+                ]} 
+                onPress={goToPrevPage}
+                disabled={currentPage === 1}
+              >
+                <Ionicons 
+                  name="chevron-back" 
+                  size={24} 
+                  color={currentPage === 1 ? COLORS.text.placeholder : COLORS.primary} 
+                />
+              </TouchableOpacity>
+              
+              <Text style={styles.paginationText}>
+                Trang {currentPage}
+              </Text>
+              
+              <TouchableOpacity 
+                style={[
+                  styles.paginationButton, 
+                  currentPage === totalPages && styles.paginationButtonDisabled
+                ]} 
+                onPress={goToNextPage}
+                disabled={currentPage === totalPages}
+              >
+                <Ionicons 
+                  name="chevron-forward" 
+                  size={24} 
+                  color={currentPage === totalPages ? COLORS.text.placeholder : COLORS.primary} 
+                />
+              </TouchableOpacity>
             </View>
-          }
-        />
+          )}
+        </>
       )}
       
       {/* Filter Modal */}
@@ -311,7 +388,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: SIZES.padding.large,
-    paddingBottom: SIZES.padding.large * 2,
+    paddingBottom: SIZES.padding.large,
   },
   placeCard: {
     marginBottom: SIZES.padding.medium,
@@ -337,6 +414,33 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     marginTop: SIZES.padding.small,
     textAlign: 'center',
+  },
+  // Pagination styles
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.padding.large,
+    paddingVertical: SIZES.padding.medium,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  paginationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.background.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  paginationButtonDisabled: {
+    opacity: 0.5,
+  },
+  paginationText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.text.primary,
   },
 });
 

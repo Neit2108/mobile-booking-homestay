@@ -171,7 +171,7 @@ const SearchResultsScreen = () => {
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="search-outline" size={50} color={COLORS.text.secondary} />
-      <Text style={styles.emptyText}>No results found</Text>
+      <Text style={styles.emptyText}>Không tìm thấy</Text>
       <Text style={styles.emptySubText}>Try adjusting your search or filters</Text>
       <TouchableOpacity style={styles.resetButton} onPress={handleResetAllFilters}>
         <Text style={styles.resetButtonText}>Reset All Filters</Text>
@@ -222,7 +222,7 @@ const SearchResultsScreen = () => {
           {location ? ` in ${location}` : ''}
         </Text>
         <Text style={styles.resultCount}>
-          {filteredPlaces.length} results found
+          {filteredPlaces.length} kết quả được tìm thấy
         </Text>
       </View>
       
