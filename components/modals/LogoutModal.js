@@ -25,10 +25,10 @@ const LogoutModal = ({
   visible,
   onCancel,
   onConfirm,
-  title = 'Are You Sure?',
-  message = 'Do you want to log out?',
-  confirmText = 'Log Out',
-  cancelText = 'Cancel',
+  title = 'Đăng xuất?',
+  message = 'Bạn có muốn đăng xuất không?',
+  confirmText = 'Đăng xuất',
+  cancelText = 'Hủy',
 }) => {
   return (
     <Modal

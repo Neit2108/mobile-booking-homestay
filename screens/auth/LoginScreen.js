@@ -101,15 +101,15 @@ const LoginScreen = () => {
           
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Let's Sign you in</Text>
-            <Text style={styles.subtitle}>Lorem ipsum dolor sit amet, consectetur</Text>
+            <Text style={styles.title}>Đăng nhập</Text>
+            <Text style={styles.subtitle}>Đặt phòng cùng Homies Stay</Text>
           </View>
           
           {/* Form */}
           <View style={styles.form}>
             <CustomInput
-              label="Email Address"
-              placeholder="Enter your email address"
+              label="Email hoặc Tên đăng nhập"
+              placeholder="Nhập email hoặc tên đăng nhập"
               value={credentials.emailorUsername}
               onChangeText={(text) => updateCredentials('emailorUsername', text)}
               error={validationErrors.emailorUsername}
@@ -117,8 +117,8 @@ const LoginScreen = () => {
             />
             
             <CustomInput
-              label="Password"
-              placeholder="Enter your password"
+              label="Mật khẩu"
+              placeholder="Nhập mật khẩu"
               value={credentials.password}
               onChangeText={(text) => updateCredentials('password', text)}
               secureTextEntry
@@ -131,11 +131,11 @@ const LoginScreen = () => {
                 <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
                   {rememberMe && <Ionicons name="checkmark" size={16} color="white" />}
                 </View>
-                <Text style={styles.rememberMeText}>Remember Me</Text>
+                <Text style={styles.rememberMeText}>Nhớ mật khẩu</Text>
               </TouchableOpacity>
               
               <TouchableOpacity>
-                <Text style={styles.forgotPasswordText}>Forgot Password</Text>
+                <Text style={styles.forgotPasswordText}>Quên mật khẩu</Text>
               </TouchableOpacity>
             </View>
             
@@ -152,15 +152,15 @@ const LoginScreen = () => {
             
             {/* Sign Up Link */}
             <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <Text style={styles.signUpText}>Bạn chưa có tài khoản? </Text>
               <TouchableOpacity onPress={navigateToRegister}>
-                <Text style={styles.signUpLink}>Sign Up</Text>
+                <Text style={styles.signUpLink}>Đăng ký</Text>
               </TouchableOpacity>
             </View>
             
             {/* Or Sign In with */}
             <View style={styles.dividerContainer}>
-              <Text style={styles.dividerText}>Or Sign In with</Text>
+              <Text style={styles.dividerText}>Hoặc</Text>
             </View>
             
             {/* Social Login Buttons */}
@@ -182,9 +182,9 @@ const LoginScreen = () => {
             {/* Terms and Conditions */}
             <View style={styles.termsContainer}>
               <Text style={styles.termsText}>
-                By signing up you agree to our{' '}
-                <Text style={styles.termsLink}>Terms</Text> and{' '}
-                <Text style={styles.termsLink}>Conditions of Use</Text>
+                Bằng cách đăng nhập bạn đồng ý với{' '}
+                <Text style={styles.termsLink}>Điều khoản</Text> và{' '}
+                <Text style={styles.termsLink}>Điều kiện của chúng tôi</Text>
               </Text>
             </View>
           </View>

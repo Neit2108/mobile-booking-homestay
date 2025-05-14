@@ -142,11 +142,11 @@ const CustomDatePicker = ({
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={handleCancel}>
-                  <Text style={styles.modalCancelText}>Cancel</Text>
+                  <Text style={styles.modalCancelText}>Hủy</Text>
                 </TouchableOpacity>
-                <Text style={styles.modalTitle}>Select Date</Text>
+                <Text style={styles.modalTitle}>Chọn ngày sinh</Text>
                 <TouchableOpacity onPress={handleConfirm}>
-                  <Text style={styles.modalDoneText}>Done</Text>
+                  <Text style={styles.modalDoneText}>Xác nhận</Text>
                 </TouchableOpacity>
               </View>
               

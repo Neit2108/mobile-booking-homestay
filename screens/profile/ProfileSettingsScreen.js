@@ -27,6 +27,12 @@ const ProfileSettingsScreen = () => {
   const handleSettingPress = (setting) => {
     console.log(`Navigate to ${setting} settings`);
     // Navigate to the appropriate settings screen
+    if (setting === 'wallet') {
+      navigation.navigate('Wallet');
+    } else {
+      // For other settings that aren't implemented yet
+      Alert.alert('Coming Soon', 'This feature is not implemented yet.');
+    }
   };
 
   const handleLogout = () => {
@@ -56,48 +62,48 @@ const ProfileSettingsScreen = () => {
 
         {/* Settings */}
         <View style={styles.settingsSection}>
-          <Text style={styles.sectionTitle}>Setting</Text>
+          <Text style={styles.sectionTitle}>Cài đặt</Text>
           
           <SettingItem
             icon="person-outline"
-            title="Personal Information"
+            title="Thông tin cá nhân"
             onPress={handleEditProfile}
           />
           
           <SettingItem
-            icon="card-outline"
-            title="Your Card"
-            onPress={() => handleSettingPress('card')}
+            icon="wallet-outline"
+            title="Ví Homies"
+            onPress={() => handleSettingPress('wallet')}
           />
           
           <SettingItem
             icon="shield-checkmark-outline"
-            title="Security"
+            title="Bảo mật"
             onPress={() => handleSettingPress('security')}
           />
           
           <SettingItem
             icon="notifications-outline"
-            title="Notification"
+            title="Thông báo"
             onPress={() => handleSettingPress('notification')}
           />
           
           <SettingItem
             icon="globe-outline"
-            title="Languages"
+            title="Ngôn ngữ"
             onPress={() => handleSettingPress('languages')}
           />
           
           <SettingItem
             icon="information-circle-outline"
-            title="Help and Support"
+            title="Trợ giúp"
             onPress={() => handleSettingPress('help')}
           />
         </View>
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
       </ScrollView>
 

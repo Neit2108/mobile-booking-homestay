@@ -129,15 +129,15 @@ const RegisterScreen = () => {
           
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Lorem ipsum dolor sit amet, consectetur</Text>
+            <Text style={styles.title}>Đăng ký</Text>
+            <Text style={styles.subtitle}>Đặt phòng cùng Homies Stay</Text>
           </View>
           
           {/* Form */}
           <View style={styles.form}>
             <CustomInput
-              label="Full Name"
-              placeholder="Enter your name"
+              label="Họ và tên"
+              placeholder="Nhập họ và tên của bạn"
               value={userData.fullName}
               onChangeText={(text) => updateUserData('fullName', text)}
               error={validationErrors.fullName}
@@ -145,8 +145,8 @@ const RegisterScreen = () => {
             />
             
             <CustomInput
-              label="Identity Card"
-              placeholder="Enter your identity card number"
+              label="Căn cước công dân"
+              placeholder="Nhập số căn cước công dân"
               value={userData.identityCard}
               onChangeText={(text) => updateUserData('identityCard', text)}
               error={validationErrors.identityCard}
@@ -155,7 +155,7 @@ const RegisterScreen = () => {
             
             <CustomInput
               label="E-mail"
-              placeholder="Enter your email"
+              placeholder="Nhập email của bạn"
               value={userData.email}
               onChangeText={(text) => updateUserData('email', text)}
               error={validationErrors.email}
@@ -163,8 +163,8 @@ const RegisterScreen = () => {
             />
             
             <CustomInput
-              label="Phone Number"
-              placeholder="Enter your phone number"
+              label="Số điện thoại"
+              placeholder="Nhập số điện thoại của bạn"
               value={userData.phoneNumber}
               onChangeText={(text) => updateUserData('phoneNumber', text)}
               error={validationErrors.phoneNumber}
@@ -172,8 +172,8 @@ const RegisterScreen = () => {
             />
             
             <CustomInput
-              label="Home Address"
-              placeholder="Enter your home address"
+              label="Địa chỉ"
+              placeholder="Nhập địa chỉ của bạn"
               value={userData.homeAddress}
               onChangeText={(text) => updateUserData('homeAddress', text)}
               error={validationErrors.homeAddress}
@@ -182,16 +182,16 @@ const RegisterScreen = () => {
             />
             
             <CustomInput
-              label="Username"
-              placeholder="Choose a username"
+              label="Tên đăng nhập"
+              placeholder="Nhập tên đăng nhập của bạn"
               value={userData.username}
               onChangeText={(text) => updateUserData('username', text)}
               error={validationErrors.username}
             />
             
             <CustomInput
-              label="Password"
-              placeholder="Enter your password"
+              label="Mật khẩu"
+              placeholder="Nhập mật khẩu của bạn"
               value={userData.password}
               onChangeText={(text) => updateUserData('password', text)}
               secureTextEntry
@@ -211,7 +211,7 @@ const RegisterScreen = () => {
             
             {/* Or Sign In with */}
             <View style={styles.dividerContainer}>
-              <Text style={styles.dividerText}>Or Sign In with</Text>
+              <Text style={styles.dividerText}>hoặc</Text>
             </View>
             
             {/* Social Login Buttons */}
@@ -233,9 +233,9 @@ const RegisterScreen = () => {
             {/* Terms and Conditions */}
             <View style={styles.termsContainer}>
               <Text style={styles.termsText}>
-                By signing up you agree to our{' '}
-                <Text style={styles.termsLink}>Terms</Text> and{' '}
-                <Text style={styles.termsLink}>Conditions of Use</Text>
+                Bằng cách đăng nhập bạn đồng ý với{' '}
+                <Text style={styles.termsLink}>Điều khoản</Text> và{' '}
+                <Text style={styles.termsLink}>Điều kiện của chúng tôi</Text>
               </Text>
             </View>
           </View>

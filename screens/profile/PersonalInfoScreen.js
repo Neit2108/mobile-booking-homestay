@@ -28,6 +28,7 @@ import { getProfile, updateProfile, uploadImage, updateImage, deleteImage, setUs
 
 // Constants
 import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { formatPrice } from '../../utils/formatPrice';
 
 const PersonalInfoScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -41,7 +42,7 @@ const PersonalInfoScreen = ({ route }) => {
     fullName: initialUserData?.fullName || '',
     identityCard: initialUserData?.identityCard || '',
     gender: initialUserData?.gender || 'Male',
-    birthDate: initialUserData?.birthDate ? new Date(initialUserData.birthDate) : null,
+    birthDate: (initialUserData?.birthDate) ? new Date(initialUserData.birthDate) : null,
     email: initialUserData?.email || '',
     phoneNumber: initialUserData?.phoneNumber || '',
     homeAddress: initialUserData?.homeAddress || '',
@@ -246,7 +247,7 @@ const PersonalInfoScreen = ({ route }) => {
   const handleAvatarPress = async () => {
     const options = [
       {
-        text: 'View Photo',
+        text: 'Xem ảnh',
         onPress: () => {
           if (avatar) {
             // In a real app, navigate to image viewer
@@ -259,11 +260,11 @@ const PersonalInfoScreen = ({ route }) => {
         },
       },
       {
-        text: 'Change Photo',
+        text: 'Đổi ảnh',
         onPress: selectImage,
       },
       {
-        text: 'Cancel',
+        text: 'Hủy',
         style: 'cancel',
       },
     ];
@@ -271,15 +272,15 @@ const PersonalInfoScreen = ({ route }) => {
     // Add delete option only if user has an avatar
     if (avatar) {
       options.splice(2, 0, {
-        text: 'Delete Photo',
+        text: 'Xóa ảnh',
         style: 'destructive',
         onPress: deleteProfileImage,
       });
     }
     
     Alert.alert(
-      'Profile Photo',
-      'Choose an option',
+      'Ảnh đại diện',
+      'Tùy chọn',
       options,
       { cancelable: true }
     );

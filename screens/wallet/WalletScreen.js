@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,9 @@ import {
   StatusBar,
   Alert,
   Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 // Components
 import {
@@ -21,8 +21,9 @@ import {
   DepositModal,
   QRCodeModal,
   PINModal,
-} from '../components/wallet';
+} from "../../components/wallet";
 
+// Import the wallet API functions
 import {
   getWalletBalance,
   payWithWallet,
@@ -30,12 +31,11 @@ import {
   hasWalletPin,
   getWalletTransactions,
   depositToWallet,
-  withdrawFromWallet
-} from '../api/wallets';
+  withdrawFromWallet,
+} from "../../api/wallets";
 
-// Services and Utils
-import WalletService from '../services/WalletService';
-import { COLORS, SIZES } from '../constants/theme';
+// Constants
+import { COLORS, SIZES } from "../../constants/theme";
 
 const WalletScreen = () => {
   const navigation = useNavigation();
@@ -63,11 +63,12 @@ const WalletScreen = () => {
   const fetchWalletData = async () => {
     try {
       setIsLoading(true);
-      const walletBalance = await getWalletBalance();
-      setBalance(walletBalance);
+      const response = await getWalletBalance();
+      // Assuming the response contains a balance property
+      setBalance(response.balance || 0);
     } catch (error) {
-      console.error('Error fetching wallet data:', error);
-      Alert.alert('Lỗi', 'Không thể tải thông tin ví');
+      console.error("Error fetching wallet data:", error);
+      Alert.alert("Lỗi", "Không thể tải thông tin ví");
     } finally {
       setIsLoading(false);
     }
@@ -77,11 +78,12 @@ const WalletScreen = () => {
   const fetchTransactions = async () => {
     try {
       setIsTransactionsLoading(true);
-      const transactionHistory = await getWalletTransactions();
-      setTransactions(transactionHistory);
+      const response = await getWalletTransactions(1, 10); // Page 1, 10 items per page
+      // Assuming the response is an array of transactions
+      setTransactions(response || []);
     } catch (error) {
-      console.error('Error fetching transactions:', error);
-      Alert.alert('Lỗi', 'Không thể tải lịch sử giao dịch');
+      console.error("Error fetching transactions:", error);
+      Alert.alert("Lỗi", "Không thể tải lịch sử giao dịch");
     } finally {
       setIsTransactionsLoading(false);
     }
@@ -90,53 +92,98 @@ const WalletScreen = () => {
   // Check if user has set a PIN
   const checkPinStatus = async () => {
     try {
-      const pinStatus = await hasWalletPin();
-      setHasSetPin(pinStatus);
+      const response = await hasWalletPin();
+      // Assuming the response has a hasPin property
+      setHasSetPin(response.hasPin || false);
     } catch (error) {
-      console.error('Error checking PIN status:', error);
+      console.error("Error checking PIN status:", error);
     }
   };
 
   // Handle deposit action
+  // Updated handleDeposit function with proper returnUrl handling
   const handleDeposit = async (amount, paymentMethod) => {
     try {
-      const response = await depositToWallet(amount, paymentMethod);
-      
-      if (paymentMethod === 'bank_transfer') {
+      // Log what we're about to do
+      console.log(`Processing deposit of ${amount} via ${paymentMethod}`);
+
+      // Determine bank code based on payment method
+      let bankCode = null;
+      if (paymentMethod === "bank_transfer") {
+        bankCode = "VNPAYQR";
+      } else if (paymentMethod === "card") {
+        bankCode = "NCB";
+      }
+
+      // Create deposit request with proper returnUrl
+      // Use the scheme that's defined in your app.json or your deep linking configuration
+      const returnUrl = "HomiesStay://payment-result"; // Make sure scheme matches your linking.js config
+
+      const depositRequest = {
+        amount: amount,
+        returnUrl: returnUrl,
+        bankCode: bankCode,
+      };
+
+      // Log the full request for debugging
+      console.log(
+        "Sending deposit request:",
+        JSON.stringify(depositRequest, null, 2)
+      );
+
+      // Send the request
+      const response = await depositToWallet(depositRequest);
+      console.log(
+        "Received deposit response:",
+        JSON.stringify(response, null, 2)
+      );
+
+      if (paymentMethod === "bank_transfer") {
         // Show QR code for bank transfer
         setPaymentData(response);
         setShowDepositModal(false);
         setShowQRModal(true);
-      } else if (paymentMethod === 'card') {
+      } else if (paymentMethod === "card") {
         // Redirect to payment URL for card payment
         setShowDepositModal(false);
         if (response.paymentUrl) {
+          console.log("Opening payment URL:", response.paymentUrl);
+          // Check if the URL contains our returnUrl to confirm it was properly passed
+          if (response.paymentUrl.includes(encodeURIComponent(returnUrl))) {
+            console.log("returnUrl successfully included in payment URL");
+          } else {
+            console.warn("Warning: returnUrl not found in payment URL!");
+          }
           Linking.openURL(response.paymentUrl);
+        } else {
+          throw new Error("Payment URL not provided in the response");
         }
       }
     } catch (error) {
-      Alert.alert('Lỗi', error.message || 'Không thể xử lý yêu cầu nạp tiền');
+      console.error("Deposit error:", error);
+      Alert.alert(
+        "Lỗi",
+        `Không thể xử lý yêu cầu nạp tiền: ${error.message || "Unknown error"}`
+      );
     }
   };
 
   // Handle PIN submission
   const handlePinSubmit = async ({ pin, oldPin }) => {
     try {
-      let response;
-      
-      if (isPinUpdate) {
-        response = await setWalletPin(pin);
-      } else {
-        response = await setWalletPin(pin);
-      }
-      
+      // Call the appropriate API function
+      const response = await setWalletPin(pin);
+
       if (response.success) {
-        Alert.alert('Thành công', response.message || 'Đã thiết lập mã PIN thành công');
+        Alert.alert(
+          "Thành công",
+          response.message || "Đã thiết lập mã PIN thành công"
+        );
         setShowPinModal(false);
         await checkPinStatus(); // Refresh pin status
       }
     } catch (error) {
-      Alert.alert('Lỗi', error.message || 'Không thể thiết lập mã PIN');
+      Alert.alert("Lỗi", error.message || "Không thể thiết lập mã PIN");
     }
   };
 
@@ -146,7 +193,8 @@ const WalletScreen = () => {
   };
 
   const handleBookings = () => {
-    navigation.navigate('AllPlaces');
+    // Navigate to the Bookings tab
+    navigation.navigate("TabNavigator", { screen: "Bookings" });
   };
 
   const handleSecurity = () => {
@@ -157,8 +205,12 @@ const WalletScreen = () => {
   const handleTransactionPress = (transaction) => {
     // Could show transaction details in the future
     Alert.alert(
-      'Chi tiết giao dịch',
-      `Mã giao dịch: ${transaction.id}\nSố tiền: ${transaction.amount.toLocaleString()} VNĐ\nLoại: ${transaction.type}\nNgày: ${new Date(transaction.createdAt).toLocaleDateString('vi-VN')}`
+      "Chi tiết giao dịch",
+      `Mã giao dịch: ${
+        transaction.id
+      }\nSố tiền: ${transaction.amount.toLocaleString()} VNĐ\nLoại: ${
+        transaction.type
+      }\nNgày: ${new Date(transaction.createdAt).toLocaleDateString("vi-VN")}`
     );
   };
 
@@ -168,8 +220,11 @@ const WalletScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background.primary} />
-      
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={COLORS.background.primary}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
@@ -178,8 +233,8 @@ const WalletScreen = () => {
         <Text style={styles.headerTitle}>Ví Homies</Text>
         <View style={styles.placeholderRight} />
       </View>
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
@@ -190,7 +245,7 @@ const WalletScreen = () => {
           currency="VND"
           onAddMoneyPress={handleAddMoney}
         />
-        
+
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
           <ActionButton
@@ -212,7 +267,7 @@ const WalletScreen = () => {
             onPress={handleSecurity}
           />
         </View>
-        
+
         {/* Transaction List */}
         <TransactionList
           transactions={transactions}
@@ -221,21 +276,21 @@ const WalletScreen = () => {
           onRefresh={fetchTransactions}
         />
       </ScrollView>
-      
+
       {/* Deposit Modal */}
       <DepositModal
         visible={showDepositModal}
         onClose={() => setShowDepositModal(false)}
         onDeposit={handleDeposit}
       />
-      
+
       {/* QR Code Modal */}
       <QRCodeModal
         visible={showQRModal}
         onClose={() => setShowQRModal(false)}
         paymentData={paymentData}
       />
-      
+
       {/* PIN Modal */}
       <PINModal
         visible={showPinModal}
@@ -253,9 +308,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background.primary,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: SIZES.padding.large,
     paddingVertical: SIZES.padding.medium,
     borderBottomWidth: 1,
@@ -263,7 +318,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.text.primary,
   },
   backButton: {
@@ -280,8 +335,8 @@ const styles = StyleSheet.create({
     paddingBottom: SIZES.padding.large * 2,
   },
   actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    flexDirection: "row",
+    justifyContent: "space-evenly",
     paddingVertical: SIZES.padding.medium,
     paddingHorizontal: SIZES.padding.large,
     marginTop: SIZES.padding.large,

@@ -13,7 +13,7 @@ const LocationBanner = ({ onPress }) => {
       <View style={styles.content}>
         <Ionicons name="location" size={22} color={COLORS.primary} style={styles.icon} />
         <Text style={styles.text}>
-          You Can Change Your Location to show nearby villas
+          Bạn có thể đổi địa chỉ để thấy các homestay ở gần bạn.
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={22} color={COLORS.text.secondary} />

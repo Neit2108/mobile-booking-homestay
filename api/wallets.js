@@ -95,10 +95,22 @@ export const getWalletTransactions = async (page = 1, pageSize = 10) => {
     const response = await apiClient.get('/wallet/transactions', {
       params: { page, pageSize }
     });
-    return response.data;
+    
+    // If the response is already an array, return it
+    if (Array.isArray(response)) {
+      return response;
+    } 
+    // If response has data property and it's an array, return that
+    else if (response && Array.isArray(response.data)) {
+      return response.data;
+    }
+    // Otherwise, return the response as is
+    else {
+      return response;
+    }
   } catch (error) {
     console.error('Error fetching wallet transactions:', error);
-    throw error.response?.data || { message: 'Failed to fetch wallet transactions' };
+    throw error;
   }
 };
 

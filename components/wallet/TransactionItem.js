@@ -15,20 +15,20 @@ const TransactionItem = ({ transaction, onPress }) => {
   };
 
   // Determine if amount is positive or negative
-  const isNegative = transaction.type === 'PAYMENT' || transaction.type === 'WITHDRAW';
+  const isNegative = transaction.type === 'Payment' || transaction.type === 'Withdraw';
   const amountColor = isNegative ? '#FF5A5F' : '#10B981';
   const amountPrefix = isNegative ? '-' : '+';
   
   // Get icon based on transaction type
   const getTransactionIcon = () => {
     switch (transaction.type) {
-      case 'DEPOSIT':
+      case 'Deposit':
         return { name: 'arrow-down-circle', color: '#10B981', background: '#10B98120' };
-      case 'PAYMENT':
+      case 'Payment':
         return { name: 'cart', color: '#FF5A5F', background: '#FF5A5F20' };
-      case 'WITHDRAW':
+      case 'Withdraw':
         return { name: 'arrow-up-circle', color: '#FF5A5F', background: '#FF5A5F20' };
-      case 'REFUND':
+      case 'Refund':
         return { name: 'refresh-circle', color: '#10B981', background: '#10B98120' };
       default:
         return { name: 'cash', color: COLORS.text.secondary, background: `${COLORS.text.secondary}20` };
@@ -51,7 +51,7 @@ const TransactionItem = ({ transaction, onPress }) => {
       </View>
       
       <Text style={[styles.transactionAmount, { color: amountColor }]}>
-        {amountPrefix}${formatPrice(transaction.amount)}
+        {amountPrefix}{formatPrice(transaction.amount)} VND
       </Text>
     </TouchableOpacity>
   );

@@ -23,6 +23,7 @@ import RecentlyViewedScreen from "../screens/search/RecentlyViewedScreen";
 
 import PersonalInfoScreen from "../screens/profile/PersonalInfoScreen";
 import WalletScreen from "../screens/wallet/WalletScreen";
+import BookingsScreen from "../screens/booking/BookingsScreen";
 
 const Stack = createStackNavigator();
 
@@ -53,6 +54,7 @@ const AppStack = () => {
       <Stack.Screen name="PlaceDetails" component={PlaceDetailsScreen} />
       <Stack.Screen name="AllReviews" component={AllReviewsScreen} />
       <Stack.Screen name="Wallet" component={WalletScreen} />
+      <Stack.Screen name="Booking" component={BookingsScreen} />
       <Stack.Screen
         name="BookingDetails"
         component={BookingDetailsScreen}
