@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -21,12 +22,12 @@ import FilterModal from '../../components/modals/FilterModal';
 import { getAllPlaces, getTopRatedPlaces } from '../../api/places';
 
 // Theme
-import { COLORS, SIZES, SHADOWS } from '../../constants/theme';
+import { COLORS, SIZES, FONTS, SHADOWS } from '../../constants/theme';
 
 const AllPlacesScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { title = 'All Places', data: initialData = [], sourceType = '' } = route.params || {};
+  const { title = 'Tất cả địa điểm', data: initialData = [], sourceType = '' } = route.params || {};
 
   const [places, setPlaces] = useState(initialData || []);
   const [filteredPlaces, setFilteredPlaces] = useState([]);
@@ -39,23 +40,23 @@ const AllPlacesScreen = () => {
     rating: 0,
   });
 
+  // Animation for button press feedback
+  const scaleAnim = new Animated.Value(1);
+
   // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
 
-  // Fetch places based on the source type if no initial data
   useEffect(() => {
     if (!initialData || initialData.length === 0) {
       fetchPlacesByType();
     } else {
       setFilteredPlaces(initialData);
-      // Tính tổng số trang khi có dữ liệu ban đầu
       setTotalPages(Math.ceil(initialData.length / itemsPerPage));
     }
   }, [initialData, sourceType]);
 
-  // Fetch different types of place data based on source type
   const fetchPlacesByType = async () => {
     try {
       setLoading(true);
@@ -66,12 +67,10 @@ const AllPlacesScreen = () => {
           data = await getTopRatedPlaces(10);
           break;
         case 'recommended':
-          // Get all places and sort by number of ratings (more realistic would be based on user preferences)
           data = await getAllPlaces();
           data.sort((a, b) => b.numOfRating - a.numOfRating);
           break;
         case 'bestToday':
-          // Get all places and sort by rating
           data = await getAllPlaces();
           data.sort((a, b) => b.rating - a.rating);
           break;
@@ -81,8 +80,6 @@ const AllPlacesScreen = () => {
       
       setPlaces(data);
       setFilteredPlaces(data);
-      
-      // Tính tổng số trang
       setTotalPages(Math.ceil(data.length / itemsPerPage));
     } catch (error) {
       console.error('Error fetching places:', error);
@@ -91,36 +88,27 @@ const AllPlacesScreen = () => {
     }
   };
 
-  // Handle search input change
   const handleSearch = (query) => {
     setSearchQuery(query);
-    
     if (query.trim() === '') {
-      // If search is cleared, reset to all places (with current filters applied)
       applyFilters(places, filters);
       return;
     }
-    
-    // Filter locally based on name or location
     const filtered = places.filter(
       place => 
         (place.name?.toLowerCase() || '').includes(query.toLowerCase()) ||
         (place.location?.toLowerCase() || '').includes(query.toLowerCase()) ||
         (place.address?.toLowerCase() || '').includes(query.toLowerCase())
     );
-    
     setFilteredPlaces(filtered);
-    // Reset về trang 1 và tính lại tổng số trang
     setCurrentPage(1);
     setTotalPages(Math.ceil(filtered.length / itemsPerPage));
   };
 
-  // Apply price and rating filters
   const applyFilters = (placesToFilter, filterSettings) => {
     const filtered = placesToFilter.filter(place => {
       const price = place.price || 0;
       const rating = place.rating || 0;
-      
       return (
         price >= filterSettings.priceMin &&
         price <= filterSettings.priceMax &&
@@ -128,7 +116,6 @@ const AllPlacesScreen = () => {
       );
     });
     
-    // Apply sorting if specified
     if (filterSettings.sortBy) {
       filtered.sort((a, b) => {
         switch (filterSettings.sortBy) {
@@ -147,16 +134,12 @@ const AllPlacesScreen = () => {
     }
     
     setFilteredPlaces(filtered);
-    // Reset về trang 1 và tính lại tổng số trang
     setCurrentPage(1);
     setTotalPages(Math.ceil(filtered.length / itemsPerPage));
   };
 
-  // Handle filter application
   const handleApplyFilters = (newFilters) => {
     setFilters(newFilters);
-    
-    // First filter by search query if any
     let searchResults = places;
     if (searchQuery) {
       searchResults = places.filter(
@@ -166,21 +149,16 @@ const AllPlacesScreen = () => {
           (place.address?.toLowerCase() || '').includes(searchQuery.toLowerCase())
       );
     }
-    
-    // Then apply other filters
     applyFilters(searchResults, newFilters);
-    
     setFilterModalVisible(false);
   };
 
-  // Lấy dữ liệu theo trang hiện tại
   const getCurrentPageData = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredPlaces.slice(startIndex, endIndex);
   };
 
-  // Điều hướng trang
   const goToNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -202,13 +180,26 @@ const AllPlacesScreen = () => {
   };
 
   const updatePlaceFavourite = (placeId, isFav) => {
-  setPlaces((prev) =>
-    prev.map((p) =>
-      p.id === placeId ? { ...p, isFavourite: isFav } : p
-    )
-  );
-};
+    setPlaces((prev) =>
+      prev.map((p) =>
+        p.id === placeId ? { ...p, isFavourite: isFav } : p
+      )
+    );
+  };
 
+  const handleButtonPressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleButtonPressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -216,8 +207,15 @@ const AllPlacesScreen = () => {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBackPress}
+          onPressIn={handleButtonPressIn}
+          onPressOut={handleButtonPressOut}
+        >
+          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+            <Ionicons name="arrow-back" size={SIZES.large} color={COLORS.text.primary} />
+          </Animated.View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{title}</Text>
         <View style={styles.placeholderRight} />
@@ -226,7 +224,7 @@ const AllPlacesScreen = () => {
       {/* Search and Filter */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <Ionicons name="search" size={20} color={COLORS.text.secondary} style={styles.searchIcon} />
+          <Ionicons name="search" size={SIZES.medium} color={COLORS.text.secondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Tìm kiếm địa điểm..."
@@ -236,11 +234,15 @@ const AllPlacesScreen = () => {
           />
         </View>
         
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.filterButton}
           onPress={() => setFilterModalVisible(true)}
+          onPressIn={handleButtonPressIn}
+          onPressOut={handleButtonPressOut}
         >
-          <Ionicons name="options-outline" size={20} color={COLORS.text.primary} />
+          <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+            <Ionicons name="options-outline" size={SIZES.medium} color={COLORS.text.primary} />
+          </Animated.View>
         </TouchableOpacity>
       </View>
       
@@ -262,22 +264,26 @@ const AllPlacesScreen = () => {
             data={getCurrentPageData()}
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
-              <PlaceCard
-                key={item.id + "-" + item.isFavourite}
-                item={item}
-                variant="horizontal"
+              <TouchableOpacity
+                activeOpacity={0.9}
                 onPress={() => handlePlacePress(item)}
-                style={styles.placeCard}
-                updatePlaceFavourite={updatePlaceFavourite}
-
-              />
+                style={styles.placeCardWrapper}
+              >
+                <PlaceCard
+                  key={item.id + "-" + item.isFavourite}
+                  item={item}
+                  variant="horizontal"
+                  style={styles.placeCard}
+                  updatePlaceFavourite={updatePlaceFavourite}
+                />
+              </TouchableOpacity>
             )}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="search-outline" size={50} color={COLORS.text.secondary} />
-                <Text style={styles.emptyText}>No places found</Text>
-                <Text style={styles.emptySubtext}>Try adjusting your search or filters</Text>
+                <Ionicons name="search-outline" size={SIZES.extraLarge * 2} color={COLORS.text.secondary} />
+                <Text style={styles.emptyText}>Không tìm thấy địa điểm</Text>
+                <Text style={styles.emptySubtext}>Thử điều chỉnh tìm kiếm hoặc bộ lọc của bạn</Text>
               </View>
             }
           />
@@ -285,38 +291,46 @@ const AllPlacesScreen = () => {
           {/* Pagination Controls */}
           {filteredPlaces.length > 0 && (
             <View style={styles.paginationContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.paginationButton, 
-                  currentPage === 1 && styles.paginationButtonDisabled
-                ]} 
+                  styles.paginationButton,
+                  currentPage === 1 && styles.paginationButtonDisabled,
+                ]}
                 onPress={goToPrevPage}
                 disabled={currentPage === 1}
+                onPressIn={handleButtonPressIn}
+                onPressOut={handleButtonPressOut}
               >
-                <Ionicons 
-                  name="chevron-back" 
-                  size={24} 
-                  color={currentPage === 1 ? COLORS.text.placeholder : COLORS.primary} 
-                />
+                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                  <Ionicons
+                    name="chevron-back"
+                    size={SIZES.large}
+                    color={currentPage === 1 ? COLORS.text.placeholder : COLORS.primary}
+                  />
+                </Animated.View>
               </TouchableOpacity>
               
               <Text style={styles.paginationText}>
-                Trang {currentPage}
+                Trang {currentPage} / {totalPages}
               </Text>
               
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.paginationButton, 
-                  currentPage === totalPages && styles.paginationButtonDisabled
-                ]} 
+                  styles.paginationButton,
+                  currentPage === totalPages && styles.paginationButtonDisabled,
+                ]}
                 onPress={goToNextPage}
                 disabled={currentPage === totalPages}
+                onPressIn={handleButtonPressIn}
+                onPressOut={handleButtonPressOut}
               >
-                <Ionicons 
-                  name="chevron-forward" 
-                  size={24} 
-                  color={currentPage === totalPages ? COLORS.text.placeholder : COLORS.primary} 
-                />
+                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={SIZES.large}
+                    color={currentPage === totalPages ? COLORS.text.placeholder : COLORS.primary}
+                  />
+                </Animated.View>
               </TouchableOpacity>
             </View>
           )}
@@ -345,114 +359,150 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: SIZES.padding.large,
     paddingVertical: SIZES.padding.medium,
+    backgroundColor: COLORS.background.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    ...SHADOWS.small,
   },
   backButton: {
-    padding: SIZES.padding.small,
-    marginLeft: -SIZES.padding.small,
+    width: 48,
+    height: 48,
+    borderRadius: SIZES.borderRadius.large,
+    backgroundColor: COLORS.background.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.medium,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: FONTS.sizes.title,
+    ...FONTS.bold,
     color: COLORS.text.primary,
+    letterSpacing: 0.5,
   },
   placeholderRight: {
-    width: 40,
+    width: 48,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SIZES.padding.large,
-    marginBottom: SIZES.padding.medium,
+    paddingVertical: SIZES.padding.medium,
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
+    height: SIZES.input.height,
     backgroundColor: COLORS.background.secondary,
-    borderRadius: SIZES.borderRadius.medium,
+    borderRadius: SIZES.borderRadius.large,
     paddingHorizontal: SIZES.padding.medium,
     marginRight: SIZES.padding.medium,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.small,
   },
   searchIcon: {
     marginRight: SIZES.padding.small,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: FONTS.sizes.medium,
+    ...FONTS.regular,
     color: COLORS.text.primary,
   },
   filterButton: {
-    width: 44,
-    height: 44,
-    borderRadius: SIZES.borderRadius.medium,
+    width: 48,
+    height: 48,
+    borderRadius: SIZES.borderRadius.large,
     backgroundColor: COLORS.background.secondary,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.medium,
   },
   resultsCountContainer: {
     paddingHorizontal: SIZES.padding.large,
     marginBottom: SIZES.padding.medium,
   },
   resultsCount: {
-    fontSize: 14,
+    fontSize: FONTS.sizes.medium,
+    ...FONTS.medium,
     color: COLORS.text.secondary,
   },
   listContent: {
     paddingHorizontal: SIZES.padding.large,
-    paddingBottom: SIZES.padding.large,
+    paddingBottom: SIZES.padding.extraLarge,
+  },
+  placeCardWrapper: {
+    marginBottom: SIZES.padding.medium,
+    borderRadius: SIZES.borderRadius.large,
+    backgroundColor: COLORS.background.primary,
+    ...SHADOWS.medium,
   },
   placeCard: {
-    marginBottom: SIZES.padding.medium,
+    borderRadius: SIZES.borderRadius.large,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background.primary,
   },
   emptyContainer: {
-    marginTop: SIZES.padding.large * 3,
+    flex: 1,
+    marginTop: SIZES.padding.extraLarge * 2,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: SIZES.padding.large,
   },
   emptyText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: FONTS.sizes.large,
+    ...FONTS.bold,
     color: COLORS.text.primary,
     marginTop: SIZES.padding.medium,
+    textAlign: 'center',
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: FONTS.sizes.medium,
+    ...FONTS.regular,
     color: COLORS.text.secondary,
     marginTop: SIZES.padding.small,
     textAlign: 'center',
+    lineHeight: 20,
   },
-  // Pagination styles
   paginationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SIZES.padding.large,
     paddingVertical: SIZES.padding.medium,
+    backgroundColor: COLORS.background.primary,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderBottomWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.small,
   },
   paginationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: SIZES.borderRadius.large,
     backgroundColor: COLORS.background.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    ...SHADOWS.small,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.medium,
   },
   paginationButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
+    backgroundColor: COLORS.background.secondary,
   },
   paginationText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: FONTS.sizes.medium,
+    ...FONTS.medium,
     color: COLORS.text.primary,
+    letterSpacing: 0.5,
   },
 });
 

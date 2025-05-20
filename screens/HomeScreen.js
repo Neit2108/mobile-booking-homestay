@@ -10,6 +10,7 @@ import PopularSection from "../components/home/PopularSection";
 import CategoryTabs from "../components/home/CategoryTabs";
 import RecommendedSection from "../components/home/RecommendedSection";
 import BestTodaySection from "../components/home/BestTodaySection";
+import { NotificationDropdown } from "../components/NotificationDropdown";
 
 // API
 import { getTopRatedPlaces, getAllPlaces } from "../api/places";
@@ -32,11 +33,11 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
   const [refreshing, setRefreshing] = useState(false);
-
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const categories = ["Tất cả", "Homestay", "Địa điểm", "Đi lại"];
 
-    const onRefresh = () => {
+  const onRefresh = () => {
     setRefreshing(true);
     fetchPlaces(); // Gọi lại API
   };
@@ -50,35 +51,34 @@ const HomeScreen = () => {
     setRecommendedPlaces((prev) => updateList(prev));
     setBestTodayPlaces((prev) => updateList(prev));
   };
+
   const fetchPlaces = async () => {
-      try {
-        setLoading(true);
-        // Load top rated places for the Popular section
-        const topRated = await getTopRatedPlaces(5);
-        setPopularPlaces(topRated);
+    try {
+      setLoading(true);
+      // Load top rated places for the Popular section
+      const topRated = await getTopRatedPlaces(5);
+      setPopularPlaces(topRated);
 
-        // Load all places for other sections
-        const allPlaces = await getAllPlaces();
-        setPlaces(allPlaces);
+      // Load all places for other sections
+      const allPlaces = await getAllPlaces();
+      setPlaces(allPlaces);
 
-        // Sort differently for recommended places (could be based on user preferences in a real app)
-        const recommended = [...allPlaces].sort(
-          (a, b) => b.numOfRating - a.numOfRating
-        );
-        setRecommendedPlaces(recommended);
+      const recommended = [...allPlaces].sort(
+        (a, b) => b.numOfRating - a.numOfRating
+      );
+      setRecommendedPlaces(recommended);
 
-        // For BestToday, pick places with special offers or best ratings
-        const bestToday = [...allPlaces]
-          .sort((a, b) => b.rating - a.rating)
-          .slice(0, 5);
-        setBestTodayPlaces(bestToday);
-      } catch (error) {
-        console.error("Error fetching places:", error);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    };
+      const bestToday = [...allPlaces]
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 5);
+      setBestTodayPlaces(bestToday);
+    } catch (error) {
+      console.error("Error fetching places:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     fetchPlaces();
@@ -88,7 +88,15 @@ const HomeScreen = () => {
     setSelectedCategory(category);
   };
 
-  // Navigate to AllPlaces screen with the appropriate data
+  const handleSeeAll = () => {
+    console.log("See All ");
+    navigation.navigate("AllPlaces", {
+      title: "Tất cả",
+      data: places,
+      sourceType: "all",
+    });
+  };
+
   const handleSeeAllPopular = () => {
     console.log("See All Popular clicked");
     navigation.navigate("AllPlaces", {
@@ -136,7 +144,16 @@ const HomeScreen = () => {
 
   // Navigate to notifications
   const navigateToNotifications = () => {
-    console.log("Navigate to notifications (not implemented)");
+    setShowNotifications(true);
+  };
+
+  const handleCloseNotifications = () => {
+    setShowNotifications(false);
+  };
+
+  const handleViewAllNotifications = () => {
+    setShowNotifications(false);
+    navigation.navigate('Notify');
   };
 
   return (
@@ -154,6 +171,12 @@ const HomeScreen = () => {
         onNotificationPress={navigateToNotifications}
       />
 
+      <NotificationDropdown
+        visible={showNotifications}
+        onClose={handleCloseNotifications}
+        onViewAll={handleViewAllNotifications}
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -162,10 +185,10 @@ const HomeScreen = () => {
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={COLORS.primary}
-            />
+          />
         }
       >
-        <LocationBanner />
+        <LocationBanner onPress={handleSeeAll} />
 
         <PopularSection
           data={popularPlaces}

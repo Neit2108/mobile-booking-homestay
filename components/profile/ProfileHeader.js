@@ -54,7 +54,7 @@ const ProfileHeader = ({ user, onEditPress, style }) => {
         />
         <View style={styles.textContainer}>
           <Text style={styles.name}>{currentUser?.fullName || 'Guest User'}</Text>
-          <Text style={styles.username}>@{currentUser?.username || 'guest'}</Text>
+          <Text style={styles.username}>@{currentUser?.username || 'khách'}</Text>
         </View>
       </View>
       

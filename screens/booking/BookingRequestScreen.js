@@ -230,21 +230,21 @@ const BookingRequestScreen = () => {
       
       const response = await bookingAPI.createBooking(bookingData);
       Alert.alert(
-        'Booking Successful',
-        'Your booking request has been submitted and is awaiting confirmation.',
-        [{ text: 'View My Bookings', onPress: () => navigation.navigate('Bookings') }]
+        'Đặt phòng thành công',
+        'Yêu cầu của bạn đã được gửi đi và đang chờ xác nhận.',
+        [{ text: 'Xem lịch sử đặt phòng', onPress: () => navigation.navigate('Bookings') }]
       );
     } catch (error) {
       console.error('Error creating booking:', error);
       
-      let errorMessage = 'There was an error creating your booking. Please try again.';
+      let errorMessage = 'Đã xảy ra lỗi khi đặt phòng. Vui lòng thử lại.';
       if (error.message?.includes('not available')) {
-        errorMessage = 'This place is not available for the selected dates.';
+        errorMessage = 'Địa điểm này không khả dụng trong ngày đã chọn.';
       } else if (error.message?.includes('voucher')) {
-        errorMessage = 'The voucher is invalid or expired.';
+        errorMessage = 'Mã giảm giá không hợp lệ hoặc đã hết hạn.';
       }
       
-      Alert.alert('Booking Failed', errorMessage);
+      Alert.alert('Đặt phòng thất bại', errorMessage);
     } finally {
       setIsSubmitting(false);
     }

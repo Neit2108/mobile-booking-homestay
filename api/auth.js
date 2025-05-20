@@ -82,6 +82,31 @@ export const register = async (userData) => {
 };
 
 /**
+ * Request password reset
+ * @param {string} email - User's email address
+ * @returns {Promise} - Response data with success message
+ */
+export const forgotPassword = async (email) => {
+  try {
+    console.log("API: Attempting to request password reset for:", email);
+    console.log("API: URL:", `${API_URL}/account/auth/forgot-password`);
+    
+    const response = await apiClient.post('/account/auth/forgot-password', { email });
+    console.log("API: Forgot password response:", response.data);
+    
+    // Validate response structure
+    if (!response.data) {
+      throw new Error('Invalid response from server');
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error("API: Forgot password error:", error);
+    throw handleApiError(error);
+  }
+};
+
+/**
  * Handle API errors
  * @param {Error} error - Error object
  * @returns {Error} - Processed error

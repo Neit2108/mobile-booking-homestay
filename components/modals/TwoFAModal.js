@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
 import CustomInput from '../forms/CustomInput';
@@ -17,14 +18,23 @@ const TwoFAModal = ({
   message,
   error,
 }) => {
-  const [otp, setOtp] = useState('');
+  const modalRef = useRef(null);
+
+  // Log modal visibility changes
+  useEffect(() => {
+    console.log('TwoFAModal visibility changed:', visible);
+  }, [visible]);
 
   const handleSubmit = () => {
-    onSubmit(otp);
+    if (modalRef.current) {
+      onSubmit(modalRef.current.value);
+    }
   };
 
   const handleClose = () => {
-    setOtp('');
+    if (modalRef.current) {
+      modalRef.current.value = '';
+    }
     onClose();
   };
 
@@ -34,40 +44,47 @@ const TwoFAModal = ({
       transparent
       animationType="fade"
       onRequestClose={handleClose}
+      statusBarTranslucent
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Xác thực hai yếu tố</Text>
-          <Text style={styles.modalSubtitle}>
-            {message || 'Vui lòng nhập mã xác thực từ ứng dụng xác thực của bạn'}
-          </Text>
-          
-          <CustomInput
-            label="Mã xác thực"
-            placeholder="Nhập mã xác thực"
-            value={otp}
-            onChangeText={setOtp}
-            keyboardType="number-pad"
-            maxLength={6}
-            error={error}
-          />
+      <TouchableWithoutFeedback onPress={handleClose}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Xác thực hai yếu tố</Text>
+              <Text style={styles.modalSubtitle}>
+                {message || 'Vui lòng nhập mã xác thực từ ứng dụng xác thực của bạn'}
+              </Text>
+              
+              <CustomInput
+                ref={modalRef}
+                label="Mã xác thực"
+                placeholder="Nhập mã xác thực"
+                keyboardType="number-pad"
+                maxLength={6}
+                error={error}
+                editable={!loading}
+              />
 
-          <View style={styles.modalButtons}>
-            <CustomButton
-              title="Hủy"
-              onPress={handleClose}
-              style={styles.modalButton}
-              variant="secondary"
-            />
-            <CustomButton
-              title="Xác nhận"
-              onPress={handleSubmit}
-              loading={loading}
-              style={styles.modalButton}
-            />
-          </View>
+              <View style={styles.modalButtons}>
+                <CustomButton
+                  title="Hủy"
+                  onPress={handleClose}
+                  style={styles.modalButton}
+                  variant="secondary"
+                  disabled={loading}
+                />
+                <CustomButton
+                  title="Xác nhận"
+                  onPress={handleSubmit}
+                  loading={loading}
+                  style={styles.modalButton}
+                  disabled={loading}
+                />
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };

@@ -13,7 +13,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Initialize auth state when the app loads
   useEffect(() => {
     const initializeAuth = async () => {
       try {
@@ -65,6 +64,8 @@ export const AuthProvider = ({ children }) => {
           bio: profileData.bio,
           identityCard: profileData.identityCard,
           role: profileData.role,
+          passwordChangeAt: profileData.passwordChangeAt,
+          twoFactor: profileData.twoFactor,
         };
         
         setUser(userData);
@@ -83,21 +84,18 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login(credentials);
       console.log('AuthContext: Login response:', response);
       
-      // Check if 2FA is required
       if (response.requiresTwoFactor) {
         console.log('AuthContext: 2FA required, returning response');
-        return response; // Return the response with userId and message for 2FA
+        return response; 
       }
       
       const { token, fullName, avatarUrl } = response;
       if (token) {
         console.log('AuthContext: Login successful, setting token and user data');
-        // Save token to storage and state
         await AsyncStorage.setItem('authToken', token);
         setToken(token);
         authAPI.setAuthToken(token);
         
-        // Set initial user data from login response
         const initialUserData = {
           fullName,
           avatarUrl,
@@ -105,7 +103,6 @@ export const AuthProvider = ({ children }) => {
         setUser(initialUserData);
         await AsyncStorage.setItem('user', JSON.stringify(initialUserData));
         
-        // Fetch complete user profile after successful login
         await fetchUserProfile();
       }
       
@@ -130,12 +127,10 @@ export const AuthProvider = ({ children }) => {
       const { token, fullName, avatarUrl } = response;
       if (token) {
         console.log('AuthContext: 2FA successful, setting token and user data');
-        // Save token to storage and state
         await AsyncStorage.setItem('authToken', token);
         setToken(token);
         authAPI.setAuthToken(token);
         
-        // Set initial user data from login response
         const initialUserData = {
           fullName,
           avatarUrl,

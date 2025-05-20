@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 // Components
@@ -17,9 +18,13 @@ import CustomInput from '../../components/forms/CustomInput';
 import CustomButton from '../../components/buttons/CustomButton';
 import SocialButton from '../../components/buttons/SocialButton';
 import TwoFAModal from '../../components/modals/TwoFAModal';
+import ForgotPasswordModal from '../../components/modals/ForgotPasswordModal';
 
 // Context
 import { useAuth } from '../../context/AuthContext';
+
+// API
+import * as authAPI from '../../api/auth';
 
 // Constants
 import { COLORS, SIZES, FONTS } from '../../constants/theme';
@@ -29,6 +34,7 @@ const LoginScreen = () => {
   const navigation = useNavigation();
   const { login, loading, error, login2FA } = useAuth();
   
+  // State management
   const [credentials, setCredentials] = useState({
     emailorUsername: '',
     password: '',
@@ -36,65 +42,113 @@ const LoginScreen = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   
-  // 2FA states
+  // 2FA states with refs for tracking
   const [show2FAModal, setShow2FAModal] = useState(false);
+  const show2FAModalRef = useRef(false);
   const [twoFAUserId, setTwoFAUserId] = useState(null);
   const [twoFAMessage, setTwoFAMessage] = useState('');
   const [twoFAError, setTwoFAError] = useState('');
 
-  const updateCredentials = (field, value) => {
-    setCredentials({ ...credentials, [field]: value });
-    // Clear validation error when user starts typing
-    if (validationErrors[field]) {
-      setValidationErrors({ ...validationErrors, [field]: null });
+  // Forgot Password states
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordError, setForgotPasswordError] = useState('');
+
+  // Component mount tracking
+  const isMounted = useRef(true);
+  const mountCount = useRef(0);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      setShow2FAModal(false);
+      setTwoFAError('');
+    };
+  }, []);
+
+  // Track modal state changes
+  useEffect(() => {
+    if (isMounted.current) {
+      console.log('Modal state changed:', show2FAModal);
+      show2FAModalRef.current = show2FAModal;
     }
-  };
+  }, [show2FAModal]);
 
-  const toggleRememberMe = () => {
-    setRememberMe(!rememberMe);
-  };
+  // Track component mounts
+  useEffect(() => {
+    mountCount.current += 1;
+    console.log('LoginScreen mounted, count:', mountCount.current);
+  }, []);
 
-  const validateForm = () => {
+  // Reset state when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Screen focused, resetting 2FA state');
+      setShow2FAModal(false);
+      setTwoFAError('');
+      return () => {
+        console.log('Screen unfocused');
+      };
+    }, [])
+  );
+
+  const updateCredentials = useCallback((field, value) => {
+    setCredentials(prev => ({ ...prev, [field]: value }));
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({ ...prev, [field]: null }));
+    }
+  }, [validationErrors]);
+
+  const toggleRememberMe = useCallback(() => {
+    setRememberMe(prev => !prev);
+  }, []);
+
+  const validateForm = useCallback(() => {
     const errors = {};
     
     if (!credentials.emailorUsername.trim()) {
-      errors.emailorUsername = 'Email or username is required';
+      errors.emailorUsername = 'Vui lòng nhập email hoặc tên đăng nhập';
     }
     
     if (!credentials.password) {
-      errors.password = 'Password is required';
+      errors.password = 'Vui lòng nhập mật khẩu';
     } else if (credentials.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+      errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     }
     
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+  }, [credentials]);
 
-  const handleLogin = async () => {
-    if (validateForm()) {
-      try {
-        console.log('Starting login process...');
-        const response = await login(credentials);
-        console.log('Login response:', response);
-        
-        if (response && response.requiresTwoFactor) {
-          console.log('2FA required, showing modal...');
-          setTwoFAUserId(response.userId);
-          setTwoFAMessage(response.message);
-          setTwoFAError('');
-          setShow2FAModal(true);
-          return;
-        }
-      } catch (error) {
-        console.error('Login error:', error);
-        // Don't reset the screen, just show the error
+  const handleLogin = useCallback(async () => {
+    if (!validateForm()) return;
+
+    try {
+      console.log('Starting login process...');
+      const response = await login(credentials);
+      console.log('Login response:', response);
+      
+      if (!isMounted.current) return;
+
+      if (response?.requiresTwoFactor) {
+        console.log('2FA required, updating state...');
+        // Batch state updates
+        setTwoFAUserId(response.userId);
+        setTwoFAMessage(response.message || 'Vui lòng nhập mã xác thực từ ứng dụng xác thực của bạn');
+        setTwoFAError('');
+        setShow2FAModal(true);
+        console.log('2FA modal state update requested');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      if (isMounted.current) {
         setError(error.message || 'Đăng nhập không thành công');
       }
     }
-  };
+  }, [credentials, login, validateForm]);
 
-  const handle2FASubmit = async (otp) => {
+  const handle2FASubmit = useCallback(async (otp) => {
     if (!otp) {
       setTwoFAError('Vui lòng nhập mã xác thực.');
       return;
@@ -108,22 +162,49 @@ const LoginScreen = () => {
       });
       console.log('2FA response:', response);
 
-      if (response && response.token) {
+      if (!isMounted.current) return;
+
+      if (response?.token) {
         setShow2FAModal(false);
-        // Navigation will be handled by the auth context
       } else {
         setTwoFAError('Mã xác thực không đúng hoặc hết hạn.');
       }
     } catch (error) {
       console.error('2FA error:', error);
-      setTwoFAError(error.message || 'Mã xác thực không đúng hoặc đã hết hạn.');
+      if (isMounted.current) {
+        setTwoFAError(error.message || 'Mã xác thực không đúng hoặc đã hết hạn.');
+      }
     }
-  };
+  }, [twoFAUserId, login2FA]);
 
-  const handle2FAClose = () => {
+  const handle2FAClose = useCallback(() => {
     setShow2FAModal(false);
     setTwoFAError('');
-  };
+  }, []);
+
+  const handleForgotPassword = useCallback(async (email) => {
+    setForgotPasswordLoading(true);
+    setForgotPasswordError('');
+    
+    try {
+      const response = await authAPI.forgotPassword(email);
+      if (!isMounted.current) return;
+
+      Alert.alert(
+        'Thành công',
+        response.message || 'Mật khẩu mới đã được gửi đến email của bạn',
+        [{ text: 'OK', onPress: () => setShowForgotPasswordModal(false) }]
+      );
+    } catch (error) {
+      if (isMounted.current) {
+        setForgotPasswordError(error.message || 'Không thể gửi yêu cầu đặt lại mật khẩu');
+      }
+    } finally {
+      if (isMounted.current) {
+        setForgotPasswordLoading(false);
+      }
+    }
+  }, []);
 
   const handleSocialLogin = (provider) => {
     console.log(`Login with ${provider}`);
@@ -135,7 +216,6 @@ const LoginScreen = () => {
   };
 
   const navigateBack = () => {
-    // If you have a screen to go back to
     navigation.goBack();
   };
 
@@ -149,18 +229,15 @@ const LoginScreen = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Back Button */}
           <TouchableOpacity style={styles.backButton} onPress={navigateBack}>
             <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
           
-          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Đăng nhập</Text>
             <Text style={styles.subtitle}>Đặt phòng cùng Homies Stay</Text>
           </View>
           
-          {/* Form */}
           <View style={styles.form}>
             <CustomInput
               label="Email hoặc Tên đăng nhập"
@@ -180,7 +257,6 @@ const LoginScreen = () => {
               error={validationErrors.password}
             />
             
-            {/* Remember Me & Forgot Password */}
             <View style={styles.forgotPasswordRow}>
               <TouchableOpacity style={styles.rememberMeContainer} onPress={toggleRememberMe}>
                 <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
@@ -189,23 +265,21 @@ const LoginScreen = () => {
                 <Text style={styles.rememberMeText}>Nhớ mật khẩu</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowForgotPasswordModal(true)}>
                 <Text style={styles.forgotPasswordText}>Quên mật khẩu</Text>
               </TouchableOpacity>
             </View>
             
-            {/* Display API error message if any */}
             {error && <Text style={styles.errorText}>{error}</Text>}
             
-            {/* Sign In Button */}
             <CustomButton
               title="Đăng nhập"
               onPress={handleLogin}
               loading={loading}
               style={styles.signInButton}
             />
+
             
-            {/* Sign Up Link */}
             <View style={styles.signUpContainer}>
               <Text style={styles.signUpText}>Bạn chưa có tài khoản? </Text>
               <TouchableOpacity onPress={navigateToRegister}>
@@ -213,12 +287,10 @@ const LoginScreen = () => {
               </TouchableOpacity>
             </View>
             
-            {/* Or Sign In with */}
             <View style={styles.dividerContainer}>
               <Text style={styles.dividerText}>Hoặc</Text>
             </View>
             
-            {/* Social Login Buttons */}
             <View style={styles.socialButtonsContainer}>
               <SocialButton 
                 icon={images.google} 
@@ -234,7 +306,6 @@ const LoginScreen = () => {
               />
             </View>
             
-            {/* Terms and Conditions */}
             <View style={styles.termsContainer}>
               <Text style={styles.termsText}>
                 Bằng cách đăng nhập bạn đồng ý với{' '}
@@ -253,6 +324,14 @@ const LoginScreen = () => {
         loading={loading}
         message={twoFAMessage}
         error={twoFAError}
+      />
+
+      <ForgotPasswordModal
+        visible={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+        onSubmit={handleForgotPassword}
+        loading={forgotPasswordLoading}
+        error={forgotPasswordError}
       />
     </SafeAreaView>
   );

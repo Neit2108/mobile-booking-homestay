@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -29,11 +30,21 @@ const ProfileSettingsScreen = () => {
     // Navigate to the appropriate settings screen
     if (setting === 'wallet') {
       navigation.navigate('Wallet');
-    } else {
-      // For other settings that aren't implemented yet
+    }
+    else if (setting === 'notification') {
+      navigation.navigate('Notify');
+    }
+    else if (setting === 'security') {
+      navigation.navigate('Security');
+    }
+    else if (setting === 'help') {
+      navigation.navigate('Help');
+    }
+    else {
       Alert.alert('Coming Soon', 'This feature is not implemented yet.');
     }
   };
+
 
   const handleLogout = () => {
     setLogoutModalVisible(true);
@@ -49,7 +60,7 @@ const ProfileSettingsScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>Cài đặt</Text>
         </View>
 
         {/* Profile Info */}
@@ -88,11 +99,11 @@ const ProfileSettingsScreen = () => {
             onPress={() => handleSettingPress('notification')}
           />
           
-          <SettingItem
+          {/* <SettingItem
             icon="globe-outline"
             title="Ngôn ngữ"
             onPress={() => handleSettingPress('languages')}
-          />
+          /> */}
           
           <SettingItem
             icon="information-circle-outline"
