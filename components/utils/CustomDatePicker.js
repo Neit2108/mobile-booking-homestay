@@ -57,18 +57,19 @@ const CustomDatePicker = ({
     if (Platform.OS === 'android') {
       setShowPicker(false);
       if (event.type === 'set' && date) {
+        // Set time to noon to avoid timezone issues
+        date.setHours(12, 0, 0, 0);
         setSelectedDate(date);
         onChange(date);
       }
     } else {
       if (date) {
+        // Set time to noon to avoid timezone issues
+        date.setHours(12, 0, 0, 0);
         setSelectedDate(date);
         onChange(date);
       }
     }
-    console.log('Selected Date:', selectedDate);
-    console.log('Form Data Birth Date:', formData.birthDate);
-
   };
   
 
@@ -80,6 +81,8 @@ const CustomDatePicker = ({
   // Close the iOS modal and apply selected date
   const handleConfirm = () => {
     setShowPicker(false);
+    // Set time to noon to avoid timezone issues
+    selectedDate.setHours(12, 0, 0, 0);
     onChange(selectedDate);
   };
   
@@ -88,10 +91,11 @@ const CustomDatePicker = ({
     setShowPicker(false);
   };
 
-  // Set date to 18 years ago - common for adult selection
   const selectEighteenYearsAgo = () => {
     const date = new Date();
     date.setFullYear(date.getFullYear() - 18);
+    // Set time to noon to avoid timezone issues
+    date.setHours(12, 0, 0, 0);
     setSelectedDate(date);
     onChange(date);
     

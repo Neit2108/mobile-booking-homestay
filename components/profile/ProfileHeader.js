@@ -3,14 +3,9 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../../constants/theme';
 import { getUserData } from '../../utils/UserStorageUtils'; // Import the utility function
+import { formatDate } from 'date-fns';
 
-/**
- * Reusable Profile Header component with user info and edit button
- * 
- * @param {object} user - User object with fullName, username, and avatarUrl
- * @param {function} onEditPress - Function to call when edit button is pressed
- * @param {object} style - Additional container style (optional)
- */
+
 const ProfileHeader = ({ user, onEditPress, style }) => {
   // Add state to store the latest user data
   const [currentUser, setCurrentUser] = useState(user);
@@ -54,7 +49,7 @@ const ProfileHeader = ({ user, onEditPress, style }) => {
         />
         <View style={styles.textContainer}>
           <Text style={styles.name}>{currentUser?.fullName || 'Guest User'}</Text>
-          <Text style={styles.username}>@{currentUser?.username || 'khách'}</Text>
+          <Text style={styles.username}>Tham gia từ {formatDate(currentUser?.createAt, 'dd/MM/yyyy')}</Text>
         </View>
       </View>
       

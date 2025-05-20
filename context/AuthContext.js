@@ -66,6 +66,7 @@ export const AuthProvider = ({ children }) => {
           role: profileData.role,
           passwordChangeAt: profileData.passwordChangeAt,
           twoFactor: profileData.twoFactor,
+          createAt: profileData.createAt,
         };
         
         setUser(userData);

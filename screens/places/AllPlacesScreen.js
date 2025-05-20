@@ -221,7 +221,6 @@ const AllPlacesScreen = () => {
         <View style={styles.placeholderRight} />
       </View>
       
-      {/* Search and Filter */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
           <Ionicons name="search" size={SIZES.medium} color={COLORS.text.secondary} style={styles.searchIcon} />
@@ -246,14 +245,12 @@ const AllPlacesScreen = () => {
         </TouchableOpacity>
       </View>
       
-      {/* Results counter */}
       <View style={styles.resultsCountContainer}>
         <Text style={styles.resultsCount}>
           {filteredPlaces.length} kết quả được tìm thấy
         </Text>
       </View>
       
-      {/* Results */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />

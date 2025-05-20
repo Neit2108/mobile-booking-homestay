@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomInput from '../../components/forms/CustomInput';
 import CustomButton from '../../components/buttons/CustomButton';
 import SocialButton from '../../components/buttons/SocialButton';
+import NotificationModal from '../../components/modals/NotificationModal';
 
 // Context
 import { useAuth } from '../../context/AuthContext';
@@ -39,6 +40,13 @@ const RegisterScreen = () => {
   });
   
   const [validationErrors, setValidationErrors] = useState({});
+  const [notificationModal, setNotificationModal] = useState({
+    visible: false,
+    type: 'success',
+    title: '',
+    message: '',
+    actionButtonText: '',
+  });
 
   const updateUserData = (field, value) => {
     setUserData({ ...userData, [field]: value });
@@ -52,41 +60,41 @@ const RegisterScreen = () => {
     const errors = {};
     
     if (!userData.fullName.trim()) {
-      errors.fullName = 'Full Name is required';
+      errors.fullName = 'Vui lòng nhập họ và tên';
     }
     
     if (!userData.identityCard.trim()) {
-      errors.identityCard = 'Identity Card number is required';
+      errors.identityCard = 'Vui lòng nhập số căn cước công dân';
     } else if (userData.identityCard.length !== 12) {
-      errors.identityCard = 'Identity Card must be 12 characters';
+      errors.identityCard = 'Số căn cước công dân phải có 12 số';
     }
     
     if (!userData.email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = 'Vui lòng nhập email';
     } else if (!/\S+@\S+\.\S+/.test(userData.email)) {
-      errors.email = 'Email format is invalid';
+      errors.email = 'Định dạng email không hợp lệ';
     }
     
     if (!userData.phoneNumber.trim()) {
-      errors.phoneNumber = 'Phone Number is required';
+      errors.phoneNumber = 'Vui lòng nhập số điện thoại';
     } else if (!/^\d{10,15}$/.test(userData.phoneNumber.replace(/[^\d]/g, ''))) {
-      errors.phoneNumber = 'Phone number format is invalid';
+      errors.phoneNumber = 'Định dạng số điện thoại không hợp lệ';
     }
     
     if (!userData.homeAddress.trim()) {
-      errors.homeAddress = 'Home Address is required';
+      errors.homeAddress = 'Vui lòng nhập địa chỉ';
     }
     
     if (!userData.username.trim()) {
-      errors.username = 'Username is required';
+      errors.username = 'Vui lòng nhập tên đăng nhập';
     } else if (userData.username.length < 4) {
-      errors.username = 'Username must be at least 4 characters';
+      errors.username = 'Tên đăng nhập phải có ít nhất 4 ký tự';
     }
     
     if (!userData.password) {
-      errors.password = 'Password is required';
+      errors.password = 'Vui lòng nhập mật khẩu';
     } else if (userData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+      errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     }
     
     setValidationErrors(errors);
@@ -95,13 +103,36 @@ const RegisterScreen = () => {
 
   const handleRegister = async () => {
     if (validateForm()) {
-      await register(userData);
+      try {
+        await register(userData);
+        setNotificationModal({
+          visible: true,
+          type: 'success',
+          title: 'Đăng ký thành công!',
+          message: 'Tài khoản của bạn đã được tạo thành công. Vui lòng đăng nhập để tiếp tục.',
+          actionButtonText: 'Đăng nhập ngay',
+        });
+      } catch (err) {
+        setNotificationModal({
+          visible: true,
+          type: 'error',
+          title: 'Đăng ký thất bại',
+          message: error || 'Có lỗi xảy ra trong quá trình đăng ký. Vui lòng thử lại.',
+          actionButtonText: 'Đóng',
+        });
+      }
+    }
+  };
+
+  const handleModalAction = () => {
+    setNotificationModal({ ...notificationModal, visible: false });
+    if (notificationModal.type === 'success') {
+      navigation.navigate('Login');
     }
   };
 
   const handleSocialLogin = (provider) => {
     console.log(`Registration with ${provider}`);
-    // Implement social registration here
   };
 
   const navigateToLogin = () => {
@@ -198,10 +229,6 @@ const RegisterScreen = () => {
               error={validationErrors.password}
             />
             
-            {/* Display API error message if any */}
-            {error && <Text style={styles.errorText}>{error}</Text>}
-            
-            {/* Create Account Button */}
             <CustomButton
               title="Đăng ký"
               onPress={handleRegister}
@@ -241,6 +268,17 @@ const RegisterScreen = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Notification Modal */}
+      <NotificationModal
+        visible={notificationModal.visible}
+        type={notificationModal.type}
+        title={notificationModal.title}
+        message={notificationModal.message}
+        actionButtonText={notificationModal.actionButtonText}
+        onActionPress={handleModalAction}
+        onClose={() => setNotificationModal({ ...notificationModal, visible: false })}
+      />
     </SafeAreaView>
   );
 };

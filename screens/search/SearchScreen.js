@@ -247,7 +247,7 @@ const SearchScreen = () => {
                   <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Đã xem gần đây</Text>
                     <TouchableOpacity onPress={handleSeeAll}>
-                      <Text style={styles.seeAllText}>See All</Text>
+                      <Text style={styles.seeAllText}>Xem tất cả</Text>
                     </TouchableOpacity>
                   </View>
 

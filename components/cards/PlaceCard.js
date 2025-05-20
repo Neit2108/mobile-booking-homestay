@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { COLORS, SIZES, SHADOWS } from "../../constants/theme";
 import { formatPrice } from "../../utils/formatPrice";
 import FavouriteButton from "../buttons/FavouriteButton";
@@ -23,9 +24,22 @@ const PlaceCard = ({
   style = {},
   updatePlaceFavourite,
 }) => {
+  const navigation = useNavigation();
+
   if (!item) {
     return null; // Return null if item is undefined
   }
+
+  const handlePress = () => {
+    if (onPress) {
+      onPress(item);
+    } else {
+      navigation.navigate('PlaceDetails', { 
+        id: item.id,
+        onToggleFavourite: updatePlaceFavourite 
+      });
+    }
+  };
 
   const getCardStyle = () => {
     switch (variant) {
@@ -72,7 +86,7 @@ const PlaceCard = ({
   return (
     <TouchableOpacity
       style={[containerStyle, style]}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.9}
     >
       <View style={styles.imageContainer}>
@@ -101,7 +115,6 @@ const PlaceCard = ({
         </Text>
 
         {variant === "horizontal-slim" ? (
-          // Special bottom section for horizontal-slim variant
           <View style={styles.slimBottomContainer}>
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={14} color="#FFD700" />

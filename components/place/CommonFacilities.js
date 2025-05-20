@@ -18,13 +18,7 @@ export const FacilityItem = ({ icon, name }) => (
   </View>
 );
 
-/**
- * Common facilities component for place details screen
- * 
- * @param {Array} facilities - Array of facility objects with icon and name
- * @param {Function} onSeeAll - Function to call when "See All" is pressed
- * @param {Object} style - Additional styles for the container
- */
+
 const CommonFacilities = ({ facilities = [], onSeeAll, style }) => {
   // Default facilities if none provided
   const defaultFacilities = [
@@ -43,7 +37,7 @@ const CommonFacilities = ({ facilities = [], onSeeAll, style }) => {
         <Text style={styles.title}>Common Facilities</Text>
         {onSeeAll && (
           <TouchableOpacity onPress={onSeeAll}>
-            <Text style={styles.seeAllText}>See All</Text>
+            <Text style={styles.seeAllText}>Xem tất cả</Text>
           </TouchableOpacity>
         )}
       </View>

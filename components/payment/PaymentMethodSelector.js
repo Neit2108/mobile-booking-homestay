@@ -24,7 +24,7 @@ const PaymentMethodSelector = ({ selectedMethod, onSelectMethod, style }) => {
       id: 'wallet',
       name: 'Ví Homies',
       icon: 'wallet-outline',
-      description: 'Sử dụng ví Homies của bạn'
+      description: 'Thanh toán bằng ví Homies để được giảm trực tiếp 10% giá trị đơn.'
     },
     {
       id: 'bank_transfer',

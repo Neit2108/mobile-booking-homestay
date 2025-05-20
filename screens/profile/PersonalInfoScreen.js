@@ -21,6 +21,7 @@ import CustomInput from '../../components/forms/CustomInput';
 import CustomButton from '../../components/buttons/CustomButton';
 import CustomDatePicker from '../../components/utils/CustomDatePicker'; // Using our custom component
 import GenderSelector from '../../components/utils/GenderSelector';
+import NotificationModal from '../../components/modals/NotificationModal';
 
 // API and Context
 import { useAuth } from '../../context/AuthContext';
@@ -65,6 +66,15 @@ const PersonalInfoScreen = ({ route }) => {
   // Track initial form data to detect changes
   const [initialFormData, setInitialFormData] = useState({});
   
+  // Add notification modal state
+  const [notificationModal, setNotificationModal] = useState({
+    visible: false,
+    type: 'success',
+    title: '',
+    message: '',
+    actionButtonText: '',
+  });
+  
   // Set auth token for API calls when component mounts
   useEffect(() => {
     if (token) {
@@ -91,19 +101,10 @@ const PersonalInfoScreen = ({ route }) => {
       const response = await getProfile(token);
       
       if (response && response.data) {
-        // Update form data with the latest profile information
         const userData = response.data;
         
-        // Handle gender value from API - it could be:
-        // 1. A string like "Nam", "Nữ", "Khác"
-        // 2. A number like 0, 1, 2 (enum values)
-        // 3. Possibly null or undefined
         let userGender = userData.gender;
         
-        // Log the raw gender value from API
-        console.log('Raw gender from API:', userGender);
-        
-        // If gender is a number, convert to the Vietnamese string
         if (userGender !== undefined && userGender !== null) {
           if (!isNaN(userGender)) {
             const genderIndex = parseInt(userGender, 10);
@@ -112,14 +113,13 @@ const PersonalInfoScreen = ({ route }) => {
             else if (genderIndex === 2) userGender = 'Khác';
           }
         } else {
-          // Default to "Nam" if no gender is provided
           userGender = 'Nam';
         }
         
         const updatedFormData = {
           fullName: userData.name || '',
           identityCard: userData.identityCard || '',
-          gender: userGender, // Use the processed gender value
+          gender: userGender, 
           birthDate: userData.birthday ? new Date(userData.birthday) : null,
           email: userData.email || '',
           phoneNumber: userData.phone || '',
@@ -218,29 +218,58 @@ const PersonalInfoScreen = ({ route }) => {
     try {
       setIsLoading(true);
       
-      // Create the profile data object in the format expected by the API
+      // Format the date to YYYY-MM-DD without timezone issues
+      const formatDateForAPI = (date) => {
+        if (!date) return null;
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
       const profileData = {
         fullName: formData.fullName,
         identityCard: formData.identityCard,
-        gender: formData.gender, // This should already be in the correct format (Nam, Nữ, Khác)
-        birthDate: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
+        gender: formData.gender,
+        birthDate: formatDateForAPI(formData.birthDate),
         email: formData.email,
         phoneNumber: formData.phoneNumber,
-        homeAddress: formData.homeAddress,
+        address: formData.homeAddress,
       };
       
-      // Log the gender being sent to the API for debugging
       console.log('Sending gender to API:', profileData.gender);
+      console.log('Sending profileData to API:', profileData);
       
-      // Call API to update profile
       const response = await updateProfile(profileData);
       
-      // ... rest of your code
+      // Show success notification
+      setNotificationModal({
+        visible: true,
+        type: 'success',
+        title: 'Cập nhật thành công!',
+        message: 'Thông tin cá nhân của bạn đã được cập nhật thành công.',
+        actionButtonText: 'Tải lại trang',
+      });
+      
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', error.message || 'Failed to update profile');
+      // Show error notification
+      setNotificationModal({
+        visible: true,
+        type: 'error',
+        title: 'Cập nhật thất bại',
+        message: error.message || 'Không thể cập nhật thông tin cá nhân. Vui lòng thử lại.',
+        actionButtonText: 'Đóng',
+      });
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handleModalAction = () => {
+    setNotificationModal({ ...notificationModal, visible: false });
+    if (notificationModal.type === 'success') {
+      fetchUserProfile(); // Reload the profile data
     }
   };
   
@@ -350,18 +379,17 @@ const PersonalInfoScreen = ({ route }) => {
           avatarUrl: response.avatarUrl
         };
         
-        // Update user data in context using the updateUserData function
         if (updateUserData) {
           await updateUserData(updatedUserData);
-          Alert.alert('Success', 'Profile photo updated successfully');
+          Alert.alert('Thành công', 'Ảnh đại diện đã được thay đổi');
         } else {
           console.error('updateUserData function is not available in the Auth Context');
-          Alert.alert('Warning', 'Photo updated but may require restart to show in all screens');
+          Alert.alert('Cảnh báo', 'Ảnh đại diện đã được thay đổi nhưng có thể cần khởi động lại ứng dụng để hiển thị trong tất cả các màn hình');
         }
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      Alert.alert('Error', error.message || 'Failed to upload image');
+      Alert.alert('Lỗi', error.message || 'Không thể tải lên ảnh');
     } finally {
       setIsImageLoading(false);
     }
@@ -386,15 +414,15 @@ const PersonalInfoScreen = ({ route }) => {
         // Update user data in context using the updateUserData function
         if (updateUserData) {
           await updateUserData(updatedUserData);
-          Alert.alert('Success', 'Profile photo deleted successfully');
+          Alert.alert('Thành công', 'Ảnh đại diện đã được xóa');
         } else {
           console.error('updateUserData function is not available in the Auth Context');
-          Alert.alert('Warning', 'Photo deleted but may require restart to show in all screens');
+          Alert.alert('Cảnh báo', 'Ảnh đại diện đã được xóa nhưng có thể cần khởi động lại ứng dụng để hiển thị trong tất cả các màn hình');
         }
       }
     } catch (error) {
       console.error('Error deleting image:', error);
-      Alert.alert('Error', error.message || 'Failed to delete image');
+      Alert.alert('Lỗi', error.message || 'Không thể xóa ảnh');
     } finally {
       setIsImageLoading(false);
     }
@@ -403,15 +431,15 @@ const PersonalInfoScreen = ({ route }) => {
   const handleGoBack = () => {
     if (hasChanges) {
       Alert.alert(
-        'Unsaved Changes',
-        'You have unsaved changes. Are you sure you want to go back?',
+        'Thông tin chưa được lưu',
+        'Bạn có thông tin chưa được lưu. Bạn có muốn quay lại không?',
         [
           {
-            text: 'Stay',
+            text: 'Ở lại',
             style: 'cancel',
           },
           {
-            text: 'Discard',
+            text: 'Bỏ qua',
             style: 'destructive',
             onPress: () => navigation.goBack(),
           },
@@ -554,6 +582,17 @@ const PersonalInfoScreen = ({ route }) => {
           </ScrollView>
         )}
       </KeyboardAvoidingView>
+
+      {/* Notification Modal */}
+      <NotificationModal
+        visible={notificationModal.visible}
+        type={notificationModal.type}
+        title={notificationModal.title}
+        message={notificationModal.message}
+        actionButtonText={notificationModal.actionButtonText}
+        onActionPress={handleModalAction}
+        onClose={() => setNotificationModal({ ...notificationModal, visible: false })}
+      />
     </SafeAreaView>
   );
 };

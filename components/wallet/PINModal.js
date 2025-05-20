@@ -15,19 +15,15 @@ const PINModal = ({ visible, onClose, onSubmit, isUpdate = false }) => {
   const [error, setError] = useState(null);
 
   const handleSubmit = async () => {
-    // Validate PIN
-    if (pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin)) {
-      setError('PIN phải có từ 4-6 số');
+    if (pin.length !== 6 || !/^\d+$/.test(pin)) {
+      setError('PIN phải có 6 số');
       return;
     }
-
-    // Validate confirm PIN
     if (pin !== confirmPin) {
       setError('Xác nhận PIN không khớp');
       return;
     }
 
-    // Additional validation for update
     if (isUpdate && (!oldPin || oldPin.length < 4 || oldPin.length > 6 || !/^\d+$/.test(oldPin))) {
       setError('PIN cũ không hợp lệ');
       return;
@@ -93,7 +89,7 @@ const PINModal = ({ visible, onClose, onSubmit, isUpdate = false }) => {
               <Text style={styles.inputLabel}>Mã PIN mới</Text>
               <TextInput
                 style={styles.pinInput}
-                placeholder="Nhập PIN mới (4-6 số)"
+                placeholder="Nhập PIN mới (6 số)"
                 keyboardType="numeric"
                 secureTextEntry
                 maxLength={6}

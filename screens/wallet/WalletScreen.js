@@ -22,6 +22,7 @@ import {
   QRCodeModal,
   PINModal,
 } from "../../components/wallet";
+import NotificationModal from "../../components/modals/NotificationModal";
 
 // Import the wallet API functions
 import {
@@ -51,6 +52,13 @@ const WalletScreen = () => {
   const [isPinUpdate, setIsPinUpdate] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
   const [hasSetPin, setHasSetPin] = useState(false);
+  const [notificationModal, setNotificationModal] = useState({
+    visible: false,
+    type: 'success',
+    title: '',
+    message: '',
+    actionButtonText: '',
+  });
 
   // Fetch data on mount
   useEffect(() => {
@@ -115,9 +123,7 @@ const WalletScreen = () => {
         bankCode = "NCB";
       }
 
-      // Create deposit request with proper returnUrl
-      // Use the scheme that's defined in your app.json or your deep linking configuration
-      const returnUrl = "HomiesStay://payment-result"; // Make sure scheme matches your linking.js config
+      const returnUrl = "HomiesStay://payment-result"; 
 
       const depositRequest = {
         amount: amount,
@@ -148,7 +154,6 @@ const WalletScreen = () => {
         setShowDepositModal(false);
         if (response.paymentUrl) {
           console.log("Opening payment URL:", response.paymentUrl);
-          // Check if the URL contains our returnUrl to confirm it was properly passed
           if (response.paymentUrl.includes(encodeURIComponent(returnUrl))) {
             console.log("returnUrl successfully included in payment URL");
           } else {
@@ -175,16 +180,29 @@ const WalletScreen = () => {
       const response = await setWalletPin(pin);
 
       if (response.success) {
-        Alert.alert(
-          "Thành công",
-          response.message || "Đã thiết lập mã PIN thành công"
-        );
+        setNotificationModal({
+          visible: true,
+          type: 'success',
+          title: 'Thành công',
+          message: response.message || 'Đã thiết lập mã PIN thành công',
+          actionButtonText: 'Đóng',
+        });
         setShowPinModal(false);
         await checkPinStatus(); // Refresh pin status
       }
     } catch (error) {
-      Alert.alert("Lỗi", error.message || "Không thể thiết lập mã PIN");
+      setNotificationModal({
+        visible: true,
+        type: 'error',
+        title: 'Lỗi',
+        message: error.message || 'Không thể thiết lập mã PIN',
+        actionButtonText: 'Đóng',
+      });
     }
+  };
+
+  const handleModalAction = () => {
+    setNotificationModal({ ...notificationModal, visible: false });
   };
 
   // Handle actions
@@ -263,7 +281,7 @@ const WalletScreen = () => {
           <ActionButton
             icon="shield-checkmark"
             label="Bảo mật"
-            color="#F59E0B"
+            color={hasSetPin ? "#10B981" : "#EF4444"}
             onPress={handleSecurity}
           />
         </View>
@@ -297,6 +315,17 @@ const WalletScreen = () => {
         onClose={() => setShowPinModal(false)}
         onSubmit={handlePinSubmit}
         isUpdate={isPinUpdate}
+      />
+
+      {/* Notification Modal */}
+      <NotificationModal
+        visible={notificationModal.visible}
+        type={notificationModal.type}
+        title={notificationModal.title}
+        message={notificationModal.message}
+        actionButtonText={notificationModal.actionButtonText}
+        onActionPress={handleModalAction}
+        onClose={() => setNotificationModal({ ...notificationModal, visible: false })}
       />
     </SafeAreaView>
   );

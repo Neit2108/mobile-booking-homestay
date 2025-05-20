@@ -126,11 +126,11 @@ const BookingDetailsScreen = () => {
 
   const handleCancelBooking = () => {
     Alert.alert(
-      "Cancel Booking",
-      "Are you sure you want to cancel this booking?",
+      "Hủy đơn đặt",
+      "Bạn có chắc chắn muốn hủy đơn đặt này?",
       [
-        { text: "No", style: "cancel" },
-        { text: "Yes", style: "destructive", onPress: confirmCancelBooking },
+        { text: "Không", style: "cancel" },
+        { text: "Có", style: "destructive", onPress: confirmCancelBooking },
       ]
     );
   };
@@ -139,11 +139,11 @@ const BookingDetailsScreen = () => {
     setCancelling(true);
     try {
       await cancelBooking(bookingId);
-      Alert.alert("Success", "Booking cancelled successfully", [
+      Alert.alert("Thành công", "Đơn đặt đã được hủy", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
-      Alert.alert("Error", "Failed to cancel booking. Please try again.");
+      Alert.alert("Lỗi", "Không thể hủy đơn đặt. Vui lòng thử lại.");
     } finally {
       setCancelling(false);
     }
@@ -160,8 +160,8 @@ const BookingDetailsScreen = () => {
     if (selectedPaymentMethod === "wallet") {
       if (walletBalance < booking.TotalPrice) {
         Alert.alert(
-          "Insufficient Balance",
-          "Your wallet balance is not sufficient."
+          "Số dư không đủ",
+          "Số dư ví của bạn không đủ."
         );
         return;
       }
@@ -176,7 +176,7 @@ const BookingDetailsScreen = () => {
       const paymentRequest = {
         bookingId: booking.Id,
         returnUrl: "homiesstay://payment-result",
-        orderInfo: `Payment for booking #${booking.Id}`,
+        orderInfo: `Thanh toán cho đơn đặt #${booking.Id}`,
       };
 
       switch (selectedPaymentMethod) {
@@ -212,7 +212,7 @@ const BookingDetailsScreen = () => {
       setBooking({ ...booking, PaymentStatus: "Processing" });
     } catch (err) {
       setPaymentError(err.message || "Payment processing failed");
-      Alert.alert("Payment Error", err.message || "Payment processing failed");
+      Alert.alert("Lỗi thanh toán", err.message || "Không thể thanh toán.");
     } finally {
       setPaymentLoading(false);
     }
@@ -220,7 +220,7 @@ const BookingDetailsScreen = () => {
 
   const handleWalletPayment = async () => {
     if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
-      setPinError("PIN must be exactly 6 digits");
+      setPinError("Mã PIN phải chính xác 6 chữ số");
       return;
     }
 
@@ -236,11 +236,11 @@ const BookingDetailsScreen = () => {
       setBooking({ ...booking, PaymentStatus: "Paid" });
       setShowPinModal(false);
       setPin("");
-      Alert.alert("Success", "Payment processed successfully", [
+      Alert.alert("Thành công", "Thanh toán đã được xử lý", [
         { text: "OK", onPress: fetchData },
       ]);
     } catch (err) {
-      setPinError(err.message || "Invalid PIN or payment error");
+      setPinError(err.message || "Mã PIN không hợp lệ hoặc lỗi thanh toán");
     } finally {
       setPaymentLoading(false);
     }
@@ -440,10 +440,20 @@ const BookingDetailsScreen = () => {
                   {formatPrice(booking.TotalPrice)}VND
                 </Text>
               </View>
+              {selectedPaymentMethod === "wallet" && (
+                <View style={styles.priceItem}>
+                <Text style={styles.priceLabel}>
+                  Giảm giá khi dùng ví Homies
+                </Text>
+                <Text style={styles.priceValue}>
+                  -{formatPrice(booking.TotalPrice * 0.1)}VND
+                </Text>
+              </View>
+              )}
               <View style={styles.totalContainer}>
                 <Text style={styles.totalLabel}>Tổng</Text>
                 <Text style={styles.totalValue}>
-                  {formatPrice(booking.TotalPrice)}VND
+                  {selectedPaymentMethod === "wallet" ? formatPrice(booking.TotalPrice * 0.9) : formatPrice(booking.TotalPrice)}VND
                 </Text>
               </View>
             </View>
@@ -463,6 +473,7 @@ const BookingDetailsScreen = () => {
                         <Text style={styles.walletBalanceText}>
                           Ví Homies: {formatPrice(walletBalance)}VND
                         </Text>
+                        
                         {walletBalance < booking.TotalPrice && (
                           <Text style={styles.insufficientBalanceText}>
                             Số dư không đủ.
@@ -501,18 +512,23 @@ const BookingDetailsScreen = () => {
 
             {isCancellable() && (
               <View style={styles.actionsContainer}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={handleCancelBooking}
-                  disabled={cancelling}
-                >
-                  {cancelling ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <Text style={styles.cancelButtonText}>Hủy đơn đặt</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={[
+                  styles.cancelBookingButton,
+                  cancelling && { opacity: 0.7 },
+                ]}
+                onPress={handleCancelBooking}
+                disabled={cancelling}
+                activeOpacity={0.8}
+              >
+                {cancelling ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.cancelButtonText}>Hủy đơn đặt</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+            
             )}
 
             <View style={{ height: SIZES.extraLarge }} />
@@ -611,6 +627,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginVertical: SIZES.padding.medium,
   },
+  dangerText: {
+    color: "#E53935", // màu đỏ tươi, hoặc COLORS.error nếu có
+    fontSize: 15,     // tuỳ, chỉnh cho đẹp
+    fontWeight: "bold",
+  },
+  
   retryButton: {
     backgroundColor: COLORS.primary,
     padding: SIZES.padding.medium,
@@ -770,16 +792,28 @@ const styles = StyleSheet.create({
   actionsContainer: {
     marginTop: SIZES.padding.medium,
   },
-  cancelButton: {
-    backgroundColor: COLORS.error,
-    padding: SIZES.padding.medium,
-    borderRadius: SIZES.borderRadius.medium,
+  cancelBookingButton: {
+    backgroundColor: "#FFA600", // Cam tươi, nổi bật (có thể chỉnh màu brand nếu muốn)
+    width: "100%",
+    borderRadius: 8, // Có thể để 0 nếu muốn vuông hoàn toàn như ảnh
     alignItems: "center",
-  },
+    justifyContent: "center",
+    paddingVertical: 14, // Nút dày, dễ bấm
+    marginTop: 20,
+    alignSelf: "stretch"
+    },
   cancelButtonText: {
-    color: "white",
-    fontSize: FONTS.sizes.medium,
+    color: "#fff",
+    fontSize: 18,
     fontWeight: "bold",
+    letterSpacing: 0.5,
+    textTransform: "none", // Nếu thích có thể cho uppercase
+  },
+  actionsContainer: {
+    marginTop: 10,
+    marginBottom: 30,
+    width: "100%",
+    paddingHorizontal: 0,
   },
   payButton: {
     backgroundColor: COLORS.primary,

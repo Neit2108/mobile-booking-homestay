@@ -114,7 +114,7 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
           <TouchableWithoutFeedback>
             <View style={styles.container}>
               <View style={styles.header}>
-                <Text style={styles.title}>Filters</Text>
+                <Text style={styles.title}>Lọc Homestay</Text>
                 <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                   <Ionicons name="close" size={24} color={COLORS.text.primary} />
                 </TouchableOpacity>
@@ -123,12 +123,12 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
               <ScrollView style={styles.content}>
                 {/* Price Range */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Price Range</Text>
+                  <Text style={styles.sectionTitle}>Khoảng giá</Text>
                   
                   {/* Price input fields instead of sliders */}
                   <View style={styles.priceInputContainer}>
                     <View style={styles.priceInputWrapper}>
-                      <Text style={styles.priceInputLabel}>Min Price</Text>
+                      <Text style={styles.priceInputLabel}>Giá thấp nhất</Text>
                       <TextInput
                         style={styles.priceInput}
                         value={minPriceText}
@@ -140,11 +140,11 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
                     </View>
                     
                     <View style={styles.priceSeparator}>
-                      <Text style={styles.priceSeparatorText}>to</Text>
+                      <Text style={styles.priceSeparatorText}>đến</Text>
                     </View>
                     
                     <View style={styles.priceInputWrapper}>
-                      <Text style={styles.priceInputLabel}>Max Price</Text>
+                      <Text style={styles.priceInputLabel}>Giá cao nhất</Text>
                       <TextInput
                         style={styles.priceInput}
                         value={maxPriceText}
@@ -164,18 +164,18 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
                 
                 {/* Rating */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Rating</Text>
+                  <Text style={styles.sectionTitle}>Đánh giá</Text>
                   <View style={styles.starsContainer}>
                     {renderStars(filters.rating)}
                   </View>
                   <Text style={styles.ratingLabel}>
-                    {filters.rating > 0 ? `${filters.rating} stars & up` : 'Any rating'}
+                    {filters.rating > 0 ? `${filters.rating} sao trở lên` : "Bất kỳ"}
                   </Text>
                 </View>
 
                 {/* Sort Options */}
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Sort By</Text>
+                  <Text style={styles.sectionTitle}>Sắp xếp theo</Text>
                   
                   <TouchableOpacity 
                     style={[
@@ -188,7 +188,7 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
                       styles.sortOptionText,
                       filters.sortBy === 'highest-rating' && styles.sortOptionTextSelected
                     ]}>
-                      Highest Rating
+                      Đánh giá cao nhất
                     </Text>
                     {filters.sortBy === 'highest-rating' && (
                       <Ionicons name="checkmark" size={18} color="white" />
@@ -206,7 +206,7 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
                       styles.sortOptionText,
                       filters.sortBy === 'most-rated' && styles.sortOptionTextSelected
                     ]}>
-                      Most Reviewed
+                      Đánh giá nhiều nhất
                     </Text>
                     {filters.sortBy === 'most-rated' && (
                       <Ionicons name="checkmark" size={18} color="white" />
@@ -224,7 +224,7 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
                       styles.sortOptionText,
                       filters.sortBy === 'price-low-high' && styles.sortOptionTextSelected
                     ]}>
-                      Price: Low to High
+                      Giá thấp đến cao
                     </Text>
                     {filters.sortBy === 'price-low-high' && (
                       <Ionicons name="checkmark" size={18} color="white" />
@@ -242,7 +242,7 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
                       styles.sortOptionText,
                       filters.sortBy === 'price-high-low' && styles.sortOptionTextSelected
                     ]}>
-                      Price: High to Low
+                      Giá cao đến thấp
                     </Text>
                     {filters.sortBy === 'price-high-low' && (
                       <Ionicons name="checkmark" size={18} color="white" />
@@ -253,10 +253,10 @@ const FilterModal = ({ visible, onClose, onApply, initialFilters = {} }) => {
               
               <View style={styles.footer}>
                 <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-                  <Text style={styles.resetButtonText}>Reset</Text>
+                  <Text style={styles.resetButtonText}>Đặt lại</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-                  <Text style={styles.applyButtonText}>Apply</Text>
+                  <Text style={styles.applyButtonText}>Áp dụng</Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -232,7 +232,7 @@ const BookingRequestScreen = () => {
       Alert.alert(
         'Đặt phòng thành công',
         'Yêu cầu của bạn đã được gửi đi và đang chờ xác nhận.',
-        [{ text: 'Xem lịch sử đặt phòng', onPress: () => navigation.navigate('Bookings') }]
+        [{ text: 'Xem lịch sử đặt phòng', onPress: () => navigation.navigate('Booking') }]
       );
     } catch (error) {
       console.error('Error creating booking:', error);
