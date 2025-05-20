@@ -201,6 +201,15 @@ const AllPlacesScreen = () => {
     navigation.goBack();
   };
 
+  const updatePlaceFavourite = (placeId, isFav) => {
+  setPlaces((prev) =>
+    prev.map((p) =>
+      p.id === placeId ? { ...p, isFavourite: isFav } : p
+    )
+  );
+};
+
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background.primary} />
@@ -254,10 +263,13 @@ const AllPlacesScreen = () => {
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
               <PlaceCard
+                key={item.id + "-" + item.isFavourite}
                 item={item}
                 variant="horizontal"
                 onPress={() => handlePlacePress(item)}
                 style={styles.placeCard}
+                updatePlaceFavourite={updatePlaceFavourite}
+
               />
             )}
             contentContainerStyle={styles.listContent}

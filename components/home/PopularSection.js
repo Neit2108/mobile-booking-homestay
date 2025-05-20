@@ -4,7 +4,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator }
 import { COLORS, SIZES } from '../../constants/theme';
 import PlaceCard from '../cards/PlaceCard';
 
-const PopularSection = ({ data = [], loading = false, onSeeAll, onPlacePress }) => {
+const PopularSection = ({ data = [], loading = false, onSeeAll, onPlacePress, updatePlaceFavourite }) => {
+  
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -30,10 +31,11 @@ const PopularSection = ({ data = [], loading = false, onSeeAll, onPlacePress }) 
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <PlaceCard
+            key={item.id + "-" + item.isFavourite}
             item={item}
             variant="popular"
             onPress={() => onPlacePress && onPlacePress(item)}
-            onFavoritePress={() => {}}
+            updatePlaceFavourite={updatePlaceFavourite}
           />
         )}
         ListEmptyComponent={

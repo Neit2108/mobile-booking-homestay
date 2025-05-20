@@ -418,6 +418,7 @@ const getMockSameCategoryPlaces = (id) => {
   });
 };
 
+
 /**
  * Generate mock reviews for development
  * @param {number} placeId - Place ID

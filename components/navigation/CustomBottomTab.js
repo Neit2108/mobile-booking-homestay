@@ -26,8 +26,8 @@ const CustomBottomTab = ({ state, descriptors, navigation }) => {
       case 'Bookings':
         iconName = isFocused ? 'document-text' : 'document-text-outline';
         break;
-      case 'Messages':
-        iconName = isFocused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline';
+      case 'Saved':
+        iconName = isFocused ? 'heart' : 'heart-outline';
         break;
       case 'Settings':
         iconName = isFocused ? 'settings' : 'settings-outline';

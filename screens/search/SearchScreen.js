@@ -57,7 +57,7 @@ const RecentlyViewedItem = ({ item, onPress }) => (
       </View>
       <Text style={styles.recentlyViewedLocation}>{item.location || item.address}</Text>
       <Text style={styles.recentlyViewedPrice}>
-        <Text style={styles.priceValue}>{formatPrice(item.price)}</Text> VND/night
+        <Text style={styles.priceValue}>{formatPrice(item.price)}</Text> VND/ngày
       </Text>
     </View>
   </TouchableOpacity>
@@ -85,9 +85,9 @@ const SearchScreen = () => {
       
       // Load recent searches from AsyncStorage in a real app
       const savedRecentSearches = [
-        { id: "1", name: "Golden Sands Retreat", location: "Clearwater, FL" },
-        { id: "2", name: "Crystal Peak Lodge", location: "Aspen, CO" },
-        { id: "3", name: "Coral Bay Resort", location: "Miami Beach, FL" },
+        { id: "1", name: "Homestay Sương Thu", location: "Đà Nẵng" },
+        { id: "2", name: "Homestay", location: "Hà Nội" },
+        { id: "3", name: "Home", location: "Phú Quốc" },
       ];
       setRecentSearches(savedRecentSearches);
     } catch (error) {
@@ -115,7 +115,6 @@ const SearchScreen = () => {
         setRecentSearches((prev) => [newSearch, ...prev.slice(0, 4)]);
       }
 
-      // Navigate to results with search query
       navigation.navigate("SearchResults", { 
         query: searchQuery,
         filters: filtersApplied
@@ -168,12 +167,12 @@ const SearchScreen = () => {
         backgroundColor={COLORS.background.primary}
       />
 
-      {/* Header */}
+
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Search</Text>
+        <Text style={styles.headerTitle}>Tìm kiếm</Text>
         <TouchableOpacity style={styles.bookmarkButton}>
           <Ionicons name="bookmark-outline" size={24} color={COLORS.primary} />
         </TouchableOpacity>
@@ -208,7 +207,6 @@ const SearchScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Wrap content in KeyboardAvoidingView and ScrollView */}
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardAvoidView}
@@ -225,13 +223,12 @@ const SearchScreen = () => {
             </View>
           ) : (
             <View>
-              {/* Recent Searches */}
               {recentSearches.length > 0 && (
                 <View style={styles.section}>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Recent Searches</Text>
+                    <Text style={styles.sectionTitle}>Tìm kiếm gần đây</Text>
                     <TouchableOpacity onPress={handleClearAll}>
-                      <Text style={styles.clearAllText}>Clear All</Text>
+                      <Text style={styles.clearAllText}>Xóa tất cả</Text>
                     </TouchableOpacity>
                   </View>
 
@@ -245,11 +242,10 @@ const SearchScreen = () => {
                 </View>
               )}
 
-              {/* Recently Viewed */}
               {recentlyViewed.length > 0 && (
                 <View style={styles.section}>
                   <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Recently Viewed</Text>
+                    <Text style={styles.sectionTitle}>Đã xem gần đây</Text>
                     <TouchableOpacity onPress={handleSeeAll}>
                       <Text style={styles.seeAllText}>See All</Text>
                     </TouchableOpacity>
@@ -267,7 +263,6 @@ const SearchScreen = () => {
             </View>
           )}
           
-          {/* Add extra space at the bottom */}
           <View style={styles.bottomSpace} />
         </ScrollView>
       </KeyboardAvoidingView>

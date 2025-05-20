@@ -12,6 +12,7 @@ import ProfileTabNavigator from './ProfileTabNavigator';
 
 // Custom Tab Bar Component
 import CustomBottomTab from '../components/navigation/CustomBottomTab';
+import SavedPlaceScreen from '../screens/places/SavedPlacesScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -60,13 +61,13 @@ const TabNavigator = () => {
       />
       
       <Tab.Screen 
-        name="Messages" 
-        component={MessagesScreen} 
+        name="Saved" 
+        component={SavedPlaceScreen} 
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
+            <Ionicons name="heart-circle-outline" size={size} color={color} />
           ),
-          tabBarLabel: 'Tin nhắn',
+          tabBarLabel: 'Đã lưu',
         }}
       />
       

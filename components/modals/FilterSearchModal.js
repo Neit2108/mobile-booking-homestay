@@ -175,7 +175,6 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
     }
   }, [visible, slideAnim, fadeAnim]);
 
-  // Update filters when initialFilters changes
   useEffect(() => {
     if (visible && initialFilters) {
       setFilters({
@@ -288,30 +287,25 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
     });
   };
 
-  // Available locations (should be fetched from API in real app)
   const locations = ['Ha Noi', 'Ho Chi Minh City', 'Da Nang', 'Nha Trang', 'Da Lat'];
 
-  // Available facilities
   const facilities = [
-    { id: 'wifi', name: 'Free Wifi', icon: 'wifi-outline' },
-    { id: 'pool', name: 'Swimming Pool', icon: 'water-outline' },
-    { id: 'parking', name: 'Free Parking', icon: 'car-outline' },
-    { id: 'breakfast', name: 'Breakfast Included', icon: 'restaurant-outline' },
-    { id: 'ac', name: 'Air Conditioning', icon: 'snow-outline' },
+    { id: 'wifi', name: 'Miễn phí wifi', icon: 'wifi-outline' },
+    { id: 'pool', name: 'Hồ bơi', icon: 'water-outline' },
+    { id: 'parking', name: 'Bãi đỗ xe miễn phí', icon: 'car-outline' },
+    { id: 'breakfast', name: 'Bữa sáng miễn phí', icon: 'restaurant-outline' },
+    { id: 'ac', name: 'Điều hòa', icon: 'snow-outline' },
   ];
 
-  // Available ratings
   const ratings = [5, 4, 3, 2, 1];
 
-  // Sort options
   const sortOptions = [
-    { id: 'highest-rating', title: 'Highest Rating', icon: 'star' },
-    { id: 'most-rated', title: 'Most Reviewed', icon: 'people' },
-    { id: 'price-low-high', title: 'Price: Low to High', icon: 'trending-up' },
-    { id: 'price-high-low', title: 'Price: High to Low', icon: 'trending-down' },
+    { id: 'highest-rating', title: 'Đánh giá cao nhất', icon: 'star' },
+    { id: 'most-rated', title: 'Nhiều đánh giá nhất', icon: 'people' },
+    { id: 'price-low-high', title: 'Giá: Thấp đến cao', icon: 'trending-up' },
+    { id: 'price-high-low', title: 'Giá: Cao đến thấp', icon: 'trending-down' },
   ];
 
-  // Get active filters count for badge
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.priceMin > 0) count++;
@@ -321,7 +315,7 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
     if (filters.rating > 0) count++;
     if (filters.instantBook) count++;
     if (filters.sortBy) count++;
-    if (filters.guests > 2) count++; // Only count if different from default
+    if (filters.guests > 2) count++; 
     
     return count;
   };
@@ -344,7 +338,7 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
             >
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>
-                  Filter By
+                  Lọc Homestay
                   {getActiveFiltersCount() > 0 && (
                     <View style={styles.filterCountBadge}>
                       <Text style={styles.filterCountText}>
@@ -359,9 +353,8 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
               </View>
               
               <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Guest Count */}
                 <View style={styles.filterSection}>
-                  <Text style={styles.filterLabel}>Guests</Text>
+                  <Text style={styles.filterLabel}>Số khách</Text>
                   <View style={styles.guestsControl}>
                     <TouchableOpacity 
                       style={[styles.guestButton, filters.guests <= 1 && styles.guestButtonDisabled]} 
@@ -381,9 +374,8 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
                   </View>
                 </View>
 
-                {/* Price Range */}
                 <View style={styles.filterSection}>
-                  <Text style={styles.filterLabel}>Price Range</Text>
+                  <Text style={styles.filterLabel}>Giá</Text>
                   <View style={styles.priceRangeContainer}>
                     <Text style={styles.priceRangeText}>
                       {formatPrice(filters.priceMin)} - {formatPrice(filters.priceMax)} VNĐ
@@ -415,12 +407,11 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
                   </View>
                 </View>
 
-                {/* Instant Book */}
                 <View style={styles.filterSection}>
                   <View style={styles.instantBookRow}>
                     <View style={styles.instantBookInfo}>
-                      <Text style={styles.filterLabel}>Instant Book</Text>
-                      <Text style={styles.instantBookDescription}>Book without waiting for the host to respond</Text>
+                      <Text style={styles.filterLabel}>Đặt phòng ngay</Text>
+                      <Text style={styles.instantBookDescription}>Không cần chờ chủ nhà phản hồi</Text>
                     </View>
                     <Switch
                       value={filters.instantBook}
@@ -432,9 +423,8 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
                   </View>
                 </View>
 
-                {/* Location */}
                 <View style={styles.filterSection}>
-                  <Text style={styles.filterLabel}>Location</Text>
+                  <Text style={styles.filterLabel}>Địa điểm</Text>
                   <View style={styles.locationButtonsContainer}>
                     {locations.map((location) => (
                       <LocationButton
@@ -447,9 +437,8 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
                   </View>
                 </View>
 
-                {/* Facilities */}
                 <View style={styles.filterSection}>
-                  <Text style={styles.filterLabel}>Facilities</Text>
+                  <Text style={styles.filterLabel}>Cơ sở vật chất</Text>
                   <View style={styles.facilitiesContainer}>
                     {facilities.map((facility) => (
                       <FacilityCheckbox
@@ -463,9 +452,8 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
                   </View>
                 </View>
 
-                {/* Ratings */}
                 <View style={styles.filterSection}>
-                  <Text style={styles.filterLabel}>Ratings</Text>
+                  <Text style={styles.filterLabel}>Đánh giá</Text>
                   <View style={styles.ratingsContainer}>
                     {ratings.map((rating) => (
                       <RatingButton
@@ -478,9 +466,8 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
                   </View>
                 </View>
 
-                {/* Sort Options */}
                 <View style={styles.filterSection}>
-                  <Text style={styles.filterLabel}>Sort By</Text>
+                  <Text style={styles.filterLabel}>Sắp xếp</Text>
                   
                   {sortOptions.map(option => (
                     <SortOption
@@ -494,21 +481,20 @@ const FilterSearchModal = ({ visible, onClose, onApply, initialFilters = {} }) =
                 </View>
               </ScrollView>
               
-              {/* Footer with Reset and Apply buttons */}
               <View style={styles.footer}>
                 <TouchableOpacity 
                   style={styles.resetButton} 
                   onPress={handleReset}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.resetButtonText}>Reset All</Text>
+                  <Text style={styles.resetButtonText}>Xóa tất cả</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.applyButton} 
                   onPress={handleApply}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.applyButtonText}>Apply Filter</Text>
+                  <Text style={styles.applyButtonText}>Áp dụng</Text>
                 </TouchableOpacity>
               </View>
             </Animated.View>

@@ -43,8 +43,6 @@ const BookingsScreen = () => {
     fetchBookings();
   }, [user]);
   
-  // Fetch bookings from API
-  // Fetch bookings from API
   const fetchBookings = async () => {
     try {
       setLoading(true);

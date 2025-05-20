@@ -292,7 +292,7 @@ const PersonalInfoScreen = ({ route }) => {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (!permissionResult.granted) {
-        Alert.alert('Permission Required', 'You need to grant camera roll permissions to change your profile photo.');
+        Alert.alert('Cần cấp quyền', 'Bạn cần cấp quyền truy cập vào thư mục ảnh của bạn');
         return;
       }
       

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -31,6 +31,7 @@ import CustomButton from "../../components/buttons/CustomButton";
 import ReviewsSection from "../../components/ratings/ReviewsSection";
 import AddReviewModal from "../../components/modals/AddReviewModal";
 import { formatPrice } from "../../utils/formatPrice";
+import FavouriteButton from "../../components/buttons/FavouriteButton";
 
 const { width } = Dimensions.get("window");
 
@@ -44,7 +45,6 @@ const FacilityItem = ({ icon, name }) => (
   </View>
 );
 
-// Recommendation Item Component - Style like the image
 const RecommendationItem = ({ item, onPress }) => {
   return (
     <TouchableOpacity
@@ -85,7 +85,7 @@ const RecommendationItem = ({ item, onPress }) => {
 const PlaceDetailsScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { id } = route.params || {};
+  const { id, onToggleFavourite } = route.params || {};
 
   const [place, setPlace] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -242,7 +242,7 @@ const PlaceDetailsScreen = () => {
           style={styles.retryButton}
           onPress={fetchPlaceDetails}
         >
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.retryButtonText}>Thử lại</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -296,7 +296,6 @@ const PlaceDetailsScreen = () => {
           renderItem={renderImageItem}
         />
 
-        {/* Image indicators */}
         {images.length > 1 && (
           <View style={styles.paginationContainer}>
             {images.map((_, index) => (
@@ -311,7 +310,6 @@ const PlaceDetailsScreen = () => {
           </View>
         )}
 
-        {/* Header buttons */}
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={styles.headerButton}
@@ -321,30 +319,30 @@ const PlaceDetailsScreen = () => {
           </TouchableOpacity>
 
           <View style={styles.headerTitle}>
-            <Text style={styles.headerTitleText}>Detail</Text>
+            <Text style={styles.headerTitleText}>Chi tiết Homestay</Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={toggleFavorite}
-          >
-            <Ionicons
-              name={favorite ? "heart" : "heart-outline"}
-              size={24}
-              color={favorite ? "#FF5A5F" : "white"}
+          <TouchableOpacity style={styles.headerButton}>
+            <FavouriteButton
+              placeId={place.id}
+              initialIsFavourite={place.isFavourite}
+              onToggle={(newFav) => {
+                setPlace((prev) => ({ ...prev, isFavourite: newFav }));
+                if (route.params?.onToggleFavourite) {
+                  route.params.onToggleFavourite(place.id, newFav);
+                }
+              }}
             />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Main Content */}
       <View style={styles.contentContainer}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           <View style={styles.mainContent}>
-            {/* Title and Rating */}
             <View style={styles.titleContainer}>
               <Text style={styles.title}>{place.name}</Text>
               <View style={styles.locationRatingRow}>
@@ -365,7 +363,6 @@ const PlaceDetailsScreen = () => {
               </View>
             </View>
 
-            {/* Common Facilities - MOVED ABOVE DESCRIPTION */}
             <View style={styles.facilitiesSection}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Cơ sở vật chất</Text>
@@ -375,14 +372,13 @@ const PlaceDetailsScreen = () => {
               </View>
 
               <View style={styles.facilitiesContainer}>
-                <FacilityItem icon="snow-outline" name="AC" />
-                <FacilityItem icon="restaurant-outline" name="Restaurant" />
-                <FacilityItem icon="water-outline" name="Swimming Pool" />
-                <FacilityItem icon="time-outline" name="24-Hours Front Desk" />
+                <FacilityItem icon="snow-outline" name="Điều hòa" />
+                <FacilityItem icon="restaurant-outline" name="Bữa sáng" />
+                <FacilityItem icon="water-outline" name="Hồ bơi" />
+                <FacilityItem icon="time-outline" name="Nhân viên trực 24/24" />
               </View>
             </View>
 
-            {/* Description Section */}
             <View style={styles.descriptionSection}>
               <Text style={styles.sectionTitle}>Mô tả</Text>
               <Text style={styles.description}>
@@ -397,7 +393,6 @@ const PlaceDetailsScreen = () => {
               )}
             </View>
 
-            {/* Reviews */}
             <View style={styles.reviewsSection}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Đánh giá</Text>
@@ -419,7 +414,6 @@ const PlaceDetailsScreen = () => {
                 </View>
               )}
 
-              {/* Add review button - only show if user can review */}
               {canReview && (
                 <TouchableOpacity
                   style={styles.addReviewButton}
@@ -435,7 +429,6 @@ const PlaceDetailsScreen = () => {
               )}
             </View>
 
-            {/* Recommendations */}
             <View style={styles.recommendationsSection}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Tương tự</Text>
@@ -443,13 +436,6 @@ const PlaceDetailsScreen = () => {
                   <Text style={styles.seeAllText}>Xem thêm</Text>
                 </TouchableOpacity>
               </View>
-
-              {/* <View style={styles.recommendationsHeader}>
-                <Text style={styles.recommendationsHeaderTitle}>Gợi ý cho bạn</Text>
-                <TouchableOpacity>
-                  <Text style={styles.recommendationsHeaderSeeAll}>Tất cả</Text>
-                </TouchableOpacity>
-              </View> */}
 
               {recommendations && recommendations.length > 0 ? (
                 <FlatList
@@ -474,13 +460,11 @@ const PlaceDetailsScreen = () => {
               )}
             </View>
 
-            {/* Bottom spacing to account for fixed bottom bar */}
             <View style={{ height: 100 }} />
           </View>
         </ScrollView>
       </View>
 
-      {/* Fixed Bottom Bar - Price and Book Now */}
       <View style={styles.bottomBar}>
         <View style={styles.priceContainer}>
           <Text style={styles.priceLabel}>Giá</Text>
@@ -490,18 +474,17 @@ const PlaceDetailsScreen = () => {
         </View>
 
         <CustomButton
-          title="Booking Now"
+          title="Đặt ngay"
           onPress={handleBookNow}
           style={styles.bookButton}
         />
       </View>
 
-      {/* Review Modal */}
       <AddReviewModal
         visible={showReviewModal}
         onClose={handleReviewAdded}
         placeId={place.id}
-        rating={0} // Default rating
+        rating={0}
       />
     </View>
   );

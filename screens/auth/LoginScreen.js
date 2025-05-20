@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomInput from '../../components/forms/CustomInput';
 import CustomButton from '../../components/buttons/CustomButton';
 import SocialButton from '../../components/buttons/SocialButton';
+import TwoFAModal from '../../components/modals/TwoFAModal';
 
 // Context
 import { useAuth } from '../../context/AuthContext';
@@ -26,7 +27,7 @@ import images from '../../constants/images';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, login2FA } = useAuth();
   
   const [credentials, setCredentials] = useState({
     emailorUsername: '',
@@ -34,6 +35,12 @@ const LoginScreen = () => {
   });
   const [rememberMe, setRememberMe] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  
+  // 2FA states
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [twoFAUserId, setTwoFAUserId] = useState(null);
+  const [twoFAMessage, setTwoFAMessage] = useState('');
+  const [twoFAError, setTwoFAError] = useState('');
 
   const updateCredentials = (field, value) => {
     setCredentials({ ...credentials, [field]: value });
@@ -66,8 +73,56 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (validateForm()) {
-      await login(credentials);
+      try {
+        console.log('Starting login process...');
+        const response = await login(credentials);
+        console.log('Login response:', response);
+        
+        if (response && response.requiresTwoFactor) {
+          console.log('2FA required, showing modal...');
+          setTwoFAUserId(response.userId);
+          setTwoFAMessage(response.message);
+          setTwoFAError('');
+          setShow2FAModal(true);
+          return;
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        // Don't reset the screen, just show the error
+        setError(error.message || 'Đăng nhập không thành công');
+      }
     }
+  };
+
+  const handle2FASubmit = async (otp) => {
+    if (!otp) {
+      setTwoFAError('Vui lòng nhập mã xác thực.');
+      return;
+    }
+
+    try {
+      console.log('Submitting 2FA code...');
+      const response = await login2FA({
+        userId: twoFAUserId,
+        otp: otp,
+      });
+      console.log('2FA response:', response);
+
+      if (response && response.token) {
+        setShow2FAModal(false);
+        // Navigation will be handled by the auth context
+      } else {
+        setTwoFAError('Mã xác thực không đúng hoặc hết hạn.');
+      }
+    } catch (error) {
+      console.error('2FA error:', error);
+      setTwoFAError(error.message || 'Mã xác thực không đúng hoặc đã hết hạn.');
+    }
+  };
+
+  const handle2FAClose = () => {
+    setShow2FAModal(false);
+    setTwoFAError('');
   };
 
   const handleSocialLogin = (provider) => {
@@ -144,7 +199,7 @@ const LoginScreen = () => {
             
             {/* Sign In Button */}
             <CustomButton
-              title="Sign In"
+              title="Đăng nhập"
               onPress={handleLogin}
               loading={loading}
               style={styles.signInButton}
@@ -190,6 +245,15 @@ const LoginScreen = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <TwoFAModal
+        visible={show2FAModal}
+        onClose={handle2FAClose}
+        onSubmit={handle2FASubmit}
+        loading={loading}
+        message={twoFAMessage}
+        error={twoFAError}
+      />
     </SafeAreaView>
   );
 };

@@ -139,14 +139,11 @@ const SearchResultsScreen = () => {
       setSortOption(newFilters.sortBy);
     }
     
-    // Save filters to state
     setLocalFilters(newFilters);
     
-    // Close modal
     setFilterModalVisible(false);
   };
 
-  // Handle resetting all filters
   const handleResetAllFilters = () => {
     resetFilters();
     setLocalSearchQuery('');
@@ -158,7 +155,6 @@ const SearchResultsScreen = () => {
     });
   };
 
-  // Get paginated results
   const { items: paginatedPlaces, totalPages } = getPaginatedResults(10);
   
   const handleLoadMore = () => {
@@ -166,8 +162,15 @@ const SearchResultsScreen = () => {
       setCurrentPage(currentPage + 1);
     }
   };
+  const updatePlaceFavourite = (placeId, isFav) => {
+  setPlaces((prev) =>
+    prev.map((p) =>
+      p.id === placeId ? { ...p, isFavourite: isFav } : p
+    )
+  );
+};
 
-  // Render Empty Component for FlatList
+
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="search-outline" size={50} color={COLORS.text.secondary} />
@@ -188,11 +191,10 @@ const SearchResultsScreen = () => {
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Search Results</Text>
+        <Text style={styles.headerTitle}>Kết quả tìm kiếm</Text>
         <View style={styles.placeholderRight} />
       </View>
       
-      {/* Search Input */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
           <Ionicons name="search" size={20} color={COLORS.text.secondary} style={styles.searchIcon} />
@@ -237,10 +239,12 @@ const SearchResultsScreen = () => {
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <PlaceCard
+              key={item.id + "-" + item.isFavourite}
               item={item}
               variant="horizontal"
               onPress={() => handlePlacePress(item)}
               style={styles.placeCard}
+              updatePlaceFavourite={updatePlaceFavourite}
             />
           )}
           contentContainerStyle={styles.listContent}

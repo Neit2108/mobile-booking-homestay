@@ -42,7 +42,6 @@ export const getUserBookings = async (userId = null) => {
     let currentUserId = userId;
     
     if (!currentUserId) {
-      // Check AsyncStorage with different possible keys
       const possibleKeys = ['userId', 'user_id', 'id'];
       for (const key of possibleKeys) {
         const storedId = await AsyncStorage.getItem(key);

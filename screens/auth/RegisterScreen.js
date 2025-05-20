@@ -203,7 +203,7 @@ const RegisterScreen = () => {
             
             {/* Create Account Button */}
             <CustomButton
-              title="Create An Account"
+              title="Đăng ký"
               onPress={handleRegister}
               loading={loading}
               style={styles.createAccountButton}

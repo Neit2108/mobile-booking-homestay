@@ -152,7 +152,7 @@ const AllReviewsScreen = () => {
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Reviews</Text>
+        <Text style={styles.headerTitle}>Đánh giá</Text>
         <TouchableOpacity onPress={handleFilterPress} style={styles.filterButton}>
           <Ionicons name="filter" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
@@ -189,7 +189,7 @@ const AllReviewsScreen = () => {
                   ))}
                 </View>
                 <Text style={styles.reviewCountText}>
-                  Based on {totalReviews} reviews
+                  Dựa trên {totalReviews} đánh giá
                 </Text>
               </View>
               
@@ -211,7 +211,7 @@ const AllReviewsScreen = () => {
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                Be the first to write a review!
+                Trở thành người đầu tiên đánh giá!
               </Text>
             </View>
           )}

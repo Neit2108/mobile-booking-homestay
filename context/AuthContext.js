@@ -79,23 +79,79 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
+      console.log('AuthContext: Attempting login...');
       const response = await authAPI.login(credentials);
-      const { token } = response;
+      console.log('AuthContext: Login response:', response);
       
+      // Check if 2FA is required
+      if (response.requiresTwoFactor) {
+        console.log('AuthContext: 2FA required, returning response');
+        return response; // Return the response with userId and message for 2FA
+      }
+      
+      const { token, fullName, avatarUrl } = response;
       if (token) {
+        console.log('AuthContext: Login successful, setting token and user data');
         // Save token to storage and state
         await AsyncStorage.setItem('authToken', token);
         setToken(token);
         authAPI.setAuthToken(token);
         
-        // Fetch user profile after successful login
+        // Set initial user data from login response
+        const initialUserData = {
+          fullName,
+          avatarUrl,
+        };
+        setUser(initialUserData);
+        await AsyncStorage.setItem('user', JSON.stringify(initialUserData));
+        
+        // Fetch complete user profile after successful login
         await fetchUserProfile();
       }
       
-      return true;
+      return response;
     } catch (error) {
-      setError(error.message || 'Login failed. Please try again.');
-      return false;
+      console.error('AuthContext: Login error:', error);
+      setError(error.message || 'Đăng nhập không thành công');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const login2FA = async (twoFAData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('AuthContext: Attempting 2FA login...', twoFAData);
+      const response = await authAPI.login2FA(twoFAData);
+      console.log('AuthContext: 2FA login response:', response);
+      
+      const { token, fullName, avatarUrl } = response;
+      if (token) {
+        console.log('AuthContext: 2FA successful, setting token and user data');
+        // Save token to storage and state
+        await AsyncStorage.setItem('authToken', token);
+        setToken(token);
+        authAPI.setAuthToken(token);
+        
+        // Set initial user data from login response
+        const initialUserData = {
+          fullName,
+          avatarUrl,
+        };
+        setUser(initialUserData);
+        await AsyncStorage.setItem('user', JSON.stringify(initialUserData));
+        
+        // Fetch complete user profile after successful login
+        await fetchUserProfile();
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('AuthContext: 2FA error:', error);
+      setError(error.message || 'Mã xác thực không đúng hoặc đã hết hạn');
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -165,6 +221,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     error,
     login,
+    login2FA,
     register,
     logout,
     updateUserData,

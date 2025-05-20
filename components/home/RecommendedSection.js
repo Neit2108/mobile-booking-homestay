@@ -5,7 +5,8 @@ import PlaceCard from '../cards/PlaceCard';
 
 const { width } = Dimensions.get('window');
 
-const RecommendedSection = ({ data = [], loading = false, onSeeAll, onPlacePress, variant = 'vertical' }) => {
+const RecommendedSection = ({ data = [], loading = false, onSeeAll, onPlacePress, variant = 'vertical', updatePlaceFavourite }) => {
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -23,11 +24,12 @@ const RecommendedSection = ({ data = [], loading = false, onSeeAll, onPlacePress
     keyExtractor: (item) => `recommended-${item.id}`,
     renderItem: ({ item }) => (
       <PlaceCard
+        key={item.id + "-" + item.isFavourite}
         item={item}
         variant={variant === 'horizontal' ? 'horizontal-slim' : 'horizontal'}
         onPress={() => onPlacePress && onPlacePress(item)}
-        onFavoritePress={() => {}}
         style={variant === 'horizontal' ? styles.horizontalCard : {}}
+        updatePlaceFavourite={updatePlaceFavourite}
       />
     ),
     contentContainerStyle: variant === 'horizontal' ? styles.horizontalListContent : styles.listContent,
